@@ -1,0 +1,31 @@
+# ===== Java / Maven =====
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.log
+*.tmp
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Node / Vue Frontend =====
+node_modules/
+dist/
+.env.local
+.env.*.local
+*.local
+
+# ===== Uploads =====
+uploads/images/*
+!uploads/images/.gitkeep
