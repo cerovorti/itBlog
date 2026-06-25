@@ -2,6 +2,10 @@
 
 一个基于 Spring Boot + Vue 3 的全栈技术博客系统，支持文章发布、Markdown 编辑、评论互动、收藏点赞等功能。
 
+📁 [项目相关文件 (docs/)](./docs/)
+
+🗄️ [数据库脚本 (backend/src/main/resources/db/)](./backend/src/main/resources/db/)
+
 ## 技术栈
 
 | 层级 | 技术 | 版本 |
@@ -45,6 +49,7 @@
 │       │   ├── comment.ts       # 评论接口
 │       │   ├── favorite.ts      # 收藏接口
 │       │   ├── like.ts          # 点赞接口
+│       │   ├── search.ts        # 搜索接口
 │       │   ├── request.ts       # Axios 封装
 │       │   ├── tag.ts           # 标签接口
 │       │   ├── upload.ts        # 上传接口
