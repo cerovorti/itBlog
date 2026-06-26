@@ -79,9 +79,6 @@
 }
 
 /* 暗色主题下 Cherry 会添加 theme__dark 类 */
-.cherry.theme__dark {
-  /* 额外暗色覆盖 */
-}
 .cherry.theme__dark .CodeMirror {
   background: var(--card-bg);
   color: var(--text);

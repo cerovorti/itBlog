@@ -36,8 +36,8 @@
       <div class="article-content markdown-body" ref="contentRef" v-html="renderedHtml" />
 
       <div class="prev-next-nav">
-        <router-link v-if="detail.prevArticle" :to="`/article/${detail.prevArticle.id}`" class="pn-link prev"><small>← 上一篇</small><span>{{ detail.prevArticle.title }}</span></router-link>
-        <router-link v-if="detail.nextArticle" :to="`/article/${detail.nextArticle.id}`" class="pn-link next"><small>下一篇 →</small><span>{{ detail.nextArticle.title }}</span></router-link>
+        <router-link v-if="detail.prevArticle" :to="`/article/${detail.prevArticle.id}`" class="pn-link prev"><small>← 该作者上一篇</small><span>{{ detail.prevArticle.title }}</span></router-link>
+        <router-link v-if="detail.nextArticle" :to="`/article/${detail.nextArticle.id}`" class="pn-link next"><small>该作者下一篇 →</small><span>{{ detail.nextArticle.title }}</span></router-link>
       </div>
 
       <CommentList :articleId="articleId" :currentUserId="userStore.user?.id" :isAdmin="userStore.isAdmin()" />
@@ -60,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getArticleDetail, updateArticle, deleteArticle, type ArticleDetailVO } from '../api/article'
@@ -104,9 +104,23 @@ function flattenToc(toc: ArticleDetailVO['toc'], acc: FlatToc[] = [], headingIdx
 const activeTocIndex = ref(-1)
 
 async function fetchDetail() {
+  tocFlat.value = []
+  renderedHtml.value = ''
+  headingObserver?.disconnect()
+  headingObserver = null
+  activeTocIndex.value = -1
   try { detail.value = (await getArticleDetail(articleId.value)).data } catch {}
   if (detail.value) {
-    renderedHtml.value = cherryEngine.makeHtml(detail.value.content)
+    const isDark = document.documentElement.classList.contains('dark')
+    const rawHtml = cherryEngine.makeHtml(detail.value.content)
+    // 修复：v-html 不受 scoped 样式影响，需确保 cherry-markdown 主题类存在
+    if (isDark && !rawHtml.includes('theme__dark')) {
+      renderedHtml.value = `<div class="cherry-markdown theme__dark">${rawHtml}</div>`
+    } else if (!rawHtml.includes('cherry-markdown')) {
+      renderedHtml.value = `<div class="cherry-markdown">${rawHtml}</div>`
+    } else {
+      renderedHtml.value = rawHtml
+    }
     await nextTick()
     // 遍历 content 区标题，建立 headingIndex
     tocFlat.value = []
@@ -197,6 +211,14 @@ function formatDate(s: string) { return s ? new Date(s).toLocaleDateString('zh-C
 
 onMounted(async () => { await fetchDetail(); window.addEventListener('scroll', onScroll) })
 onUnmounted(() => { window.removeEventListener('scroll', onScroll); headingObserver?.disconnect() })
+
+// 修复 Bug 1：同一组件复用下路由参数变化时重新加载
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    fetchDetail()
+    window.scrollTo(0, 0)
+  }
+})
 </script>
 
 <style scoped>
@@ -229,7 +251,8 @@ onUnmounted(() => { window.removeEventListener('scroll', onScroll); headingObser
 .action-btn.delete-btn:hover { border-color: #E05555; background: rgba(231,76,60,0.1); }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .article-content { font-size: 16px; line-height: 1.9; }
-.article-content :deep(pre) { border-radius: var(--radius-md) !important; }
+.article-content :where(h1, h2, h3, h4, h5, h6) { scroll-margin-top: 80px; }
+/* markdown-body 代码块样式移至 cherry-theme.css（v-html 不受 scoped 影响） */
 .prev-next-nav { display: flex; gap: 16px; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--card-border); }
 .pn-link { flex: 1; min-width: 0; text-decoration: none; padding: 14px 18px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-md); transition: all var(--transition-fast); }
 .pn-link:hover { border-color: var(--primary-light); box-shadow: var(--shadow-sm); }

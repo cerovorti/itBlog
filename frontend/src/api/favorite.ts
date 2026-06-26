@@ -11,3 +11,7 @@ export function getFavoriteStatus(articleId: number) {
 export function getFavoriteList(page = 1, size = 10) {
   return request.get('/favorite/list', { params: { page, size } })
 }
+
+export function getUserFavoriteList(userId: number, page = 1, size = 10) {
+  return request.get(`/favorite/user/${userId}`, { params: { page, size } })
+}

@@ -12,6 +12,7 @@ export interface CommentVO {
   content: string
   createTime: string
   children: CommentVO[]
+  replyCount: number
 }
 
 export function getTopComments(articleId: number, page = 1, size = 10) {

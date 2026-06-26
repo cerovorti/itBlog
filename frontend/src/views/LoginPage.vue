@@ -11,7 +11,8 @@
         </div>
         <div class="input-group">
           <span class="input-icon">🔒</span>
-          <input v-model="password" type="password" placeholder="密码" class="auth-input" />
+          <input v-model="password" :type="showPwd ? 'text' : 'password'" placeholder="密码" class="auth-input" />
+          <span class="pwd-toggle" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span>
         </div>
         <label class="remember">
           <input type="checkbox" v-model="rememberMe" /> 记住我（7天）
@@ -34,7 +35,7 @@ import { getMyProfile } from '../api/user'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter(); const userStore = useUserStore()
-const username = ref(''); const password = ref('')
+const username = ref(''); const password = ref(''); const showPwd = ref(false)
 const rememberMe = ref(false); const submitting = ref(false)
 
 async function handleLogin() {
@@ -65,6 +66,7 @@ async function handleLogin() {
 .input-group:focus-within { border-color: var(--primary-light); box-shadow: 0 0 0 3px var(--input-focus-shadow); }
 .input-icon { font-size: 16px; flex-shrink: 0; }
 .auth-input { flex: 1; border: none; outline: none; font-size: 15px; background: transparent; color: var(--text); }
+.pwd-toggle { font-size: 16px; cursor: pointer; flex-shrink: 0; user-select: none; }
 .remember { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; margin-bottom: 20px; }
 .btn-auth { width: 100%; padding: 13px; border: none; border-radius: var(--radius-md); background: var(--primary-gradient); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: all var(--transition-normal); }
 .btn-auth:hover { transform: translateY(-2px); box-shadow: var(--shadow-float); }

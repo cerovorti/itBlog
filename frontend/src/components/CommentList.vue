@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'; import { ElMessage } from 'element-plus'
+import { ref, onMounted, watch } from 'vue'; import { ElMessage } from 'element-plus'
 import { getTopComments, addComment, type CommentVO } from '../api/comment'; import CommentItem from './CommentItem.vue'
 const props = defineProps<{ articleId: number; currentUserId?: number; isAdmin?: boolean }>()
 const comments = ref<CommentVO[]>([]); const newComment = ref('')
@@ -25,7 +25,12 @@ const page = ref(1); const total = ref(0); const hasMore = ref(false)
 async function fetchComments() { loading.value = true; page.value = 1; try { const r = await getTopComments(props.articleId, 1); comments.value = r.data.records || []; total.value = r.data.total || 0; hasMore.value = r.data.total > 10 } finally { loading.value = false } }
 async function loadMore() { loadingMore.value = true; page.value++; try { const r = await getTopComments(props.articleId, page.value); comments.value.push(...(r.data.records || [])); hasMore.value = comments.value.length < r.data.total } finally { loadingMore.value = false } }
 async function submitComment() { if (!newComment.value.trim()) return; submitting.value = true; try { await addComment({ articleId: props.articleId, content: newComment.value }); newComment.value = ''; ElMessage.success('评论成功'); fetchComments() } catch {} finally { submitting.value = false } }
-onMounted(fetchComments); defineExpose({ fetchComments })
+onMounted(fetchComments)
+
+// 修复：articleId prop 变化时重新加载评论
+watch(() => props.articleId, () => fetchComments())
+
+defineExpose({ fetchComments })
 </script>
 
 <style scoped>

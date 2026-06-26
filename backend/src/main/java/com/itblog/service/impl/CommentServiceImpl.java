@@ -56,12 +56,10 @@ public class CommentServiceImpl implements CommentService {
             voList.add(toVO(c, userMap));
         }
 
-        // 查询每条顶级评论的子回复数量
+        // 查询每条顶级评论的子孙回复总数（replyCount）
         for (CommentVO vo : voList) {
-            LambdaQueryWrapper<Comment> replyWrapper = new LambdaQueryWrapper<>();
-            replyWrapper.eq(Comment::getParentId, vo.getId());
-            replyWrapper.eq(Comment::getIsDeleted, 0);
-            vo.setChildren(null); // 前端点击展开时才加载
+            vo.setReplyCount(countAllDescendants(vo.getId()));
+            vo.setChildren(new ArrayList<>()); // 前端点击展开时通过 getReplies 加载
         }
 
         return new PageVO<>(voList, commentPage.getTotal(), page, size);
@@ -69,18 +67,46 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentVO> getReplies(Long parentId) {
+        List<Comment> allDescendants = collectAllDescendants(parentId);
+        Map<Long, User> userMap = new HashMap<>();
+        List<CommentVO> voList = new ArrayList<>();
+        for (Comment c : allDescendants) {
+            voList.add(toVO(c, userMap));
+        }
+        return voList;
+    }
+
+    /**
+     * 递归收集某 parentId 下的所有子孙评论（展平），按创建时间升序
+     */
+    private List<Comment> collectAllDescendants(Long parentId) {
         LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Comment::getParentId, parentId);
         wrapper.eq(Comment::getIsDeleted, 0);
         wrapper.orderByAsc(Comment::getCreateTime);
-        List<Comment> replies = commentMapper.selectList(wrapper);
-
-        Map<Long, User> userMap = new HashMap<>();
-        List<CommentVO> voList = new ArrayList<>();
-        for (Comment c : replies) {
-            voList.add(toVO(c, userMap));
+        List<Comment> direct = commentMapper.selectList(wrapper);
+        List<Comment> result = new ArrayList<>(direct);
+        for (Comment c : direct) {
+            result.addAll(collectAllDescendants(c.getId()));
         }
-        return voList;
+        return result;
+    }
+
+    /**
+     * 查询某评论的所有子孙回复总数
+     */
+    private int countAllDescendants(Long parentId) {
+        LambdaQueryWrapper<Comment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Comment::getParentId, parentId);
+        wrapper.eq(Comment::getIsDeleted, 0);
+        Long count = commentMapper.selectCount(wrapper);
+        int total = count.intValue();
+        // 递归统计子回复的子回复
+        List<Comment> direct = commentMapper.selectList(wrapper);
+        for (Comment c : direct) {
+            total += countAllDescendants(c.getId());
+        }
+        return total;
     }
 
     @Override

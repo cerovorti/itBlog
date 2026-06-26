@@ -50,7 +50,7 @@
                   </div>
                 </div>
                 <div class="menu-divider"></div>
-                <router-link to="/profile" class="menu-item" @click="showMenu = false">👤 我的主页</router-link>
+                <a class="menu-item" @click="goToMyProfile">👤 我的主页</a>
                 <router-link v-if="isAdminUser" to="/admin" class="menu-item" @click="showMenu = false">⚙️ 管理后台</router-link>
                 <div class="menu-divider"></div>
                 <button @click="handleLogout" class="menu-item menu-logout">🚪 退出登录</button>
@@ -143,6 +143,10 @@ async function onClearHistory() {
 async function onDeleteHistoryItem(id: number) {
   await deleteSearchHistoryItem(id)
   fetchSearchHistory()
+}
+function goToMyProfile() {
+  showMenu.value = false
+  router.push('/profile')
 }
 function handleLogout() {
   showMenu.value = false

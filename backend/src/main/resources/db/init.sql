@@ -1,180 +1,233 @@
--- ============================================================
--- IT技术博客平台 - 数据库初始化脚本
--- 数据库: MySQL 8.0
--- ============================================================
+-- MySQL dump 10.13  Distrib 8.0.33, for Win64 (x86_64)
+--
+-- Host: localhost    Database: demo_album
+-- ------------------------------------------------------
+-- Server version	8.0.33
 
-CREATE DATABASE IF NOT EXISTS demo_album
-    DEFAULT CHARACTER SET utf8mb4
-    DEFAULT COLLATE utf8mb4_unicode_ci;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
-USE demo_album;
+--
+-- Table structure for table `busi_article`
+--
 
--- ============================================================
--- 1. 用户表
--- ============================================================
-CREATE TABLE IF NOT EXISTS sys_user (
-    id             BIGINT PRIMARY KEY AUTO_INCREMENT,
-    username       VARCHAR(50)  NOT NULL UNIQUE,
-    password       VARCHAR(255) NOT NULL COMMENT 'BCrypt加密',
-    email          VARCHAR(100) NOT NULL,
-    avatar         VARCHAR(255) COMMENT '头像URL',
-    bio            VARCHAR(200) COMMENT '个性签名',
-    skills         VARCHAR(500) DEFAULT '' COMMENT '技术栈（逗号分隔）',
-    role           TINYINT DEFAULT 0 COMMENT '0=普通用户 1=管理员',
-    is_recommended TINYINT DEFAULT 0 COMMENT '0=不推荐 1=推荐作者',
-    status         TINYINT DEFAULT 1 COMMENT '0=封禁 1=正常',
-    ban_until      DATETIME COMMENT '封禁截止时间(NULL=永久)',
-    create_time    DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+DROP TABLE IF EXISTS `busi_article`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_article` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '文章标题',
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '原始Markdown正文',
+  `cover_img` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '封面图URL',
+  `author_id` bigint NOT NULL COMMENT '作者ID',
+  `category_id` bigint NOT NULL COMMENT '所属分类ID',
+  `view_count` int DEFAULT '0' COMMENT '阅读量',
+  `like_count` int DEFAULT '0' COMMENT '点赞量',
+  `comment_count` int DEFAULT '0' COMMENT '评论数',
+  `status` tinyint DEFAULT '0' COMMENT '0=草稿 1=已发布',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `summary` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '' COMMENT '文章摘要',
+  `is_deleted` tinyint DEFAULT '0' COMMENT '软删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_author` (`author_id`) USING BTREE,
+  KEY `idx_category` (`category_id`) USING BTREE,
+  KEY `idx_status_create` (`status`,`create_time`) USING BTREE,
+  KEY `idx_is_deleted` (`is_deleted`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='文章主表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================================
--- 2. 专栏分类表（两级，parent_id=0为一级）
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_category (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name        VARCHAR(50) NOT NULL,
-    parent_id   BIGINT DEFAULT 0 COMMENT '0=一级分类',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE INDEX uk_name_parent (name, parent_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专栏分类表';
+--
+-- Table structure for table `busi_article_tag`
+--
 
--- ============================================================
--- 3. 标签字典表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_tag (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name        VARCHAR(50) NOT NULL UNIQUE,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标签字典表';
+DROP TABLE IF EXISTS `busi_article_tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_article_tag` (
+  `article_id` bigint NOT NULL,
+  `tag_id` bigint NOT NULL,
+  PRIMARY KEY (`article_id`,`tag_id`) USING BTREE,
+  KEY `idx_tag` (`tag_id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='文章标签中间表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================================
--- 4. 文章主表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_article (
-    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    title         VARCHAR(200) NOT NULL COMMENT '文章标题',
-    content       LONGTEXT NOT NULL COMMENT '原始Markdown正文',
-    summary       VARCHAR(500) NOT NULL DEFAULT '' COMMENT '文章摘要（手动填写）',
-    cover_img     VARCHAR(255) NOT NULL DEFAULT '' COMMENT '封面图URL',
-    author_id     BIGINT NOT NULL COMMENT '作者ID',
-    category_id   BIGINT NOT NULL COMMENT '所属分类ID',
-    view_count    INT DEFAULT 0 COMMENT '阅读量',
-    like_count    INT DEFAULT 0 COMMENT '点赞量',
-    comment_count INT DEFAULT 0 COMMENT '评论数',
-    status        TINYINT DEFAULT 0 COMMENT '0=草稿 1=已发布',
-    is_deleted    TINYINT DEFAULT 0 COMMENT '0=正常 1=已删除（软删除）',
-    create_time   DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time   DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_author (author_id),
-    INDEX idx_category (category_id),
-    INDEX idx_status_create (status, create_time),
-    INDEX idx_is_deleted (is_deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章主表';
+--
+-- Table structure for table `busi_category`
+--
 
--- ============================================================
--- 5. 文章-标签 中间表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_article_tag (
-    article_id  BIGINT NOT NULL,
-    tag_id      BIGINT NOT NULL,
-    PRIMARY KEY (article_id, tag_id),
-    INDEX idx_tag (tag_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章标签中间表';
+DROP TABLE IF EXISTS `busi_category`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_category` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `parent_id` bigint DEFAULT '0' COMMENT '0=一级分类',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_name_parent` (`name`,`parent_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='专栏分类表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================================
--- 6. 评论表（parent_id=0为顶级评论）
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_comment (
-    id               BIGINT PRIMARY KEY AUTO_INCREMENT,
-    article_id       BIGINT NOT NULL COMMENT '所属文章ID',
-    user_id          BIGINT NOT NULL COMMENT '评论者ID',
-    parent_id        BIGINT DEFAULT 0 COMMENT '0=顶级评论 非0=回复某评论',
-    reply_to_user_id BIGINT DEFAULT 0 COMMENT '被回复人ID(冗余)',
-    content          TEXT NOT NULL COMMENT '评论内容',
-    is_deleted       TINYINT DEFAULT 0 COMMENT '0=正常 1=已删除（软删除）',
-    create_time      DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_article (article_id),
-    INDEX idx_parent (parent_id),
-    INDEX idx_is_deleted (is_deleted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
+--
+-- Table structure for table `busi_comment`
+--
 
--- ============================================================
--- 7. 点赞记录表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_like (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id     BIGINT NOT NULL,
-    article_id  BIGINT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_user_article (user_id, article_id),
-    INDEX idx_article (article_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='点赞记录表';
+DROP TABLE IF EXISTS `busi_comment`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_comment` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `article_id` bigint NOT NULL COMMENT '所属文章ID',
+  `user_id` bigint NOT NULL COMMENT '评论者ID',
+  `parent_id` bigint DEFAULT '0' COMMENT '0=顶级评论 非0=回复某评论',
+  `reply_to_user_id` bigint DEFAULT '0' COMMENT '被回复人ID(冗余)',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论内容',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_deleted` tinyint DEFAULT '0' COMMENT '软删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_article` (`article_id`) USING BTREE,
+  KEY `idx_parent` (`parent_id`) USING BTREE,
+  KEY `idx_is_deleted` (`is_deleted`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=45 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='评论表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================================
--- 8. 收藏记录表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_favorite (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id     BIGINT NOT NULL,
-    article_id  BIGINT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_user_article (user_id, article_id),
-    INDEX idx_user (user_id),
-    INDEX idx_article (article_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收藏记录表';
+--
+-- Table structure for table `busi_favorite`
+--
 
--- ============================================================
--- 9. 上传文件表（图片BLOB存储）
--- ============================================================
-CREATE TABLE IF NOT EXISTS sys_file (
-    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
-    filename      VARCHAR(255) NOT NULL COMMENT '存储文件名（UUID）',
-    original_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
-    content_type  VARCHAR(100) NOT NULL COMMENT 'MIME类型',
-    file_size     BIGINT NOT NULL COMMENT '文件大小（字节）',
-    file_data     LONGBLOB NOT NULL COMMENT '文件二进制数据',
-    uploader_id   BIGINT COMMENT '上传者ID',
-    create_time   DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_uploader (uploader_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='上传文件表';
+DROP TABLE IF EXISTS `busi_favorite`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_favorite` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `article_id` bigint NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_article` (`user_id`,`article_id`) USING BTREE,
+  KEY `idx_user` (`user_id`) USING BTREE,
+  KEY `idx_article` (`article_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='收藏记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- ============================================================
--- 10. 搜索历史表
--- ============================================================
-CREATE TABLE IF NOT EXISTS busi_search_history (
-    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id     BIGINT NOT NULL COMMENT '用户ID',
-    keyword     VARCHAR(200) NOT NULL COMMENT '搜索关键词',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_user (user_id),
-    INDEX idx_user_keyword (user_id, keyword)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='搜索历史表';
+--
+-- Table structure for table `busi_like`
+--
 
--- ============================================================
--- 初始数据
--- ============================================================
+DROP TABLE IF EXISTS `busi_like`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `article_id` bigint NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_user_article` (`user_id`,`article_id`) USING BTREE,
+  KEY `idx_article` (`article_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='点赞记录表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 管理员账号: admin / admin123
--- BCrypt hash of "admin123" (10 rounds)
-INSERT IGNORE INTO sys_user (username, password, email, role) VALUES
-('admin', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'admin@itblog.com', 1);
+--
+-- Table structure for table `busi_search_history`
+--
 
--- 初始分类
-INSERT IGNORE INTO busi_category (name, parent_id) VALUES
-('前端开发', 0),
-('后端开发', 0),
-('数据库', 0),
-('DevOps', 0),
-('人工智能', 0),
-('Vue.js', 1),
-('React', 1),
-('Java', 2),
-('Python', 2),
-('Go', 2),
-('MySQL', 3),
-('Redis', 3);
+DROP TABLE IF EXISTS `busi_search_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_search_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `keyword` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '搜索关键词',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_user` (`user_id`) USING BTREE,
+  KEY `idx_user_keyword` (`user_id`,`keyword`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='搜索历史表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 
--- 初始标签
-INSERT IGNORE INTO busi_tag (name) VALUES
-('Spring Boot'), ('Vue 3'), ('TypeScript'), ('MyBatis-Plus'),
-('JWT'), ('MySQL'), ('Docker'), ('Linux'), ('Git'), ('RESTful');
+--
+-- Table structure for table `busi_tag`
+--
+
+DROP TABLE IF EXISTS `busi_tag`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `busi_tag` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `name` (`name`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='标签字典表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_file`
+--
+
+DROP TABLE IF EXISTS `sys_file`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_file` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '存储文件名（UUID）',
+  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '原始文件名',
+  `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'MIME类型',
+  `file_size` bigint NOT NULL COMMENT '文件大小（字节）',
+  `file_data` longblob NOT NULL COMMENT '文件二进制数据',
+  `uploader_id` bigint DEFAULT NULL COMMENT '上传者ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_uploader` (`uploader_id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci ROW_FORMAT=DYNAMIC COMMENT='上传文件表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_user`
+--
+
+DROP TABLE IF EXISTS `sys_user`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sys_user` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'BCrypt加密',
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像URL',
+  `bio` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '个性签名',
+  `skills` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '技术栈（逗号分隔）',
+  `role` tinyint DEFAULT '0' COMMENT '0=普通用户 1=管理员',
+  `is_recommended` tinyint DEFAULT '0' COMMENT '0=不推荐 1=推荐作者',
+  `status` tinyint DEFAULT '1' COMMENT '0=封禁 1=正常',
+  `ban_until` datetime DEFAULT NULL COMMENT '封禁截止时间(NULL=永久)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `username` (`username`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping routines for database 'demo_album'
+--
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-06-26 23:12:21

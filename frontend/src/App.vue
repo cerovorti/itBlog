@@ -227,15 +227,16 @@ onMounted(() => {
    ================================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body {
-  overflow-x: hidden;
-}
 body {
   font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   transition: background var(--transition-slow), color var(--transition-slow);
   -webkit-font-smoothing: antialiased;
+}
+
+#app-container {
+  overflow-x: clip;
 }
 
 .main-content {

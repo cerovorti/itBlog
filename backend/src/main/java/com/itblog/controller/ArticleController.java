@@ -50,6 +50,14 @@ public class ArticleController {
         return Result.ok(articleService.getMyArticles(page, size, user.getId()));
     }
 
+    @GetMapping("/user/{userId}")
+    public Result<PageVO<ArticleVO>> userArticles(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.ok(articleService.getMyArticles(page, size, userId));
+    }
+
     @GetMapping("/drafts")
     public Result<PageVO<ArticleVO>> drafts(
             @RequestParam(defaultValue = "1") int page,

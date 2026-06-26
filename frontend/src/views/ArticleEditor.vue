@@ -96,7 +96,7 @@ import { uploadImage } from '../api/upload'; import { useUserStore } from '../st
 import MarkdownEditor from '../components/MarkdownEditor.vue'
 
 const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
-const editId = route.params.id ? Number(route.params.id) : null
+const editId = computed(() => route.params.id ? Number(route.params.id) : null)
 const detail = ref<ArticleDetailVO | null>(null)
 const title = ref(''); const summary = ref(''); const content = ref('')
 const coverImg = ref(''); const coverUrlInput = ref(''); const coverUploading = ref(false)
@@ -135,9 +135,11 @@ let autoTimer: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
   window.addEventListener('resize', onResize)
   const [c, t] = await Promise.all([getCategoryList(), getTagList()])
-  flatCategories.value = c.data || []; allTags.value = t.data || []
-  if (editId) {
-    const r = await getArticleDetail(editId)
+  // 数据库变更后 busi_category 只保留一级分类（parentId=0），后端将 0 转为 null 返回
+  flatCategories.value = ((c.data || []) as Category[]).filter((cat: Category) => !cat.parentId)
+  allTags.value = t.data || []
+  if (editId.value) {
+    const r = await getArticleDetail(editId.value)
     const d = r.data; detail.value = d
     title.value = d.article.title === '无标题' ? '' : d.article.title; summary.value = d.article.summary || ''; content.value = d.content
     coverImg.value = d.article.coverImg || ''; categoryId.value = d.article.categoryId
@@ -151,6 +153,36 @@ onMounted(async () => {
   }
 })
 onUnmounted(() => { window.removeEventListener('resize', onResize); if (autoTimer) clearInterval(autoTimer) })
+
+// 修复：同一组件复用下路由参数变化时重新加载
+watch(() => route.params.id, async (newId) => {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null }
+  const editIdNew = newId ? Number(newId) : null
+  if (editIdNew) {
+    // 切换到编辑另一篇文章
+    const r = await getArticleDetail(editIdNew)
+    const d = r.data; detail.value = d
+    title.value = d.article.title === '无标题' ? '' : d.article.title
+    summary.value = d.article.summary || ''
+    content.value = d.content
+    coverImg.value = d.article.coverImg || ''
+    categoryId.value = d.article.categoryId
+    selectedTags.value = []
+    if (d.article.tags) {
+      for (const tn of d.article.tags) {
+        const f = allTags.value.find(t => t.name === tn)
+        selectedTags.value.push(f || { id: -1, name: tn, createTime: '' } as Tag)
+      }
+    }
+  } else if (!newId) {
+    // 从编辑切换到新建
+    detail.value = null
+    title.value = ''; summary.value = ''; content.value = ''
+    coverImg.value = defaultCovers[0].src; categoryId.value = null
+    selectedTags.value = []
+    autoTimer = setInterval(async () => { if (content.value.trim()) await submit(0, true) }, 30000)
+  }
+})
 
 function selectTag(t: Tag) { selectedTags.value.push(t) }
 function removeTag(id: number) { selectedTags.value = selectedTags.value.filter(t => t.id !== id) }
@@ -183,9 +215,9 @@ async function submit(status: number, silent = false) {
   if (status === 0) saving.value = true; else publishing.value = true
   const titleText = title.value.trim() || '无标题'
   const d = { title: titleText, content: content.value, summary: summary.value, coverImg: coverImg.value, categoryId: categoryId.value || undefined, tagIds: selectedTagIds.value.length ? selectedTagIds.value : undefined, status }
-  try { if (editId) { await updateArticle(editId, d) } else { const r = await publishArticle(d); if (!editId) router.replace(`/editor/${r.data.id}`) } if (!silent) ElMessage.success(status === 1 ? '发布成功！' : '草稿已保存'); lastSaved.value = new Date().toLocaleTimeString('zh-CN'); if (status === 1) router.push('/') } catch { if (!silent) ElMessage.error('操作失败') } finally { saving.value = false; publishing.value = false } }
+  try { if (editId.value) { await updateArticle(editId.value, d) } else { const r = await publishArticle(d); if (!editId.value) router.replace(`/editor/${r.data.id}`) } if (!silent) ElMessage.success(status === 1 ? '发布成功！' : '草稿已保存'); lastSaved.value = new Date().toLocaleTimeString('zh-CN'); if (status === 1) router.push('/') } catch { if (!silent) ElMessage.error('操作失败') } finally { saving.value = false; publishing.value = false } }
 async function withdrawToDraft() {
-  await updateArticle(editId!, {
+  await updateArticle(editId.value!, {
     title: title.value,
     content: content.value,
     summary: summary.value,

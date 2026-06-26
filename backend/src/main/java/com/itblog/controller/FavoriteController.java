@@ -46,4 +46,12 @@ public class FavoriteController {
         if (user == null) return Result.unauthorized("请先登录");
         return Result.ok(favoriteService.getFavoriteArticles(page, size, user.getId()));
     }
+
+    @GetMapping("/user/{userId}")
+    public Result<PageVO<ArticleVO>> userFavorites(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.ok(favoriteService.getFavoriteArticles(page, size, userId));
+    }
 }

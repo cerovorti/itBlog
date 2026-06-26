@@ -26,6 +26,8 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getCategoryList, type Category } from '../../api/category'
+import { getTagCloud, type TagCloudItem } from '../../api/tag'
+import { getTagsByCategoryId } from '../../utils/categoryTagMapping'
 
 const route = useRoute()
 const categories = ref<Category[]>([]); const loading = ref(true)
@@ -37,7 +39,24 @@ const catColors = [
 
 async function fetchCategories() {
   loading.value = true
-  try { categories.value = (await getCategoryList()).data || [] } finally { loading.value = false }
+  try {
+    const [catRes, cloudRes] = await Promise.all([getCategoryList(), getTagCloud()])
+    const all: Category[] = catRes.data || []
+    const cloudItems: TagCloudItem[] = cloudRes.data || []
+    // 构建 tagName → articleCount 的映射
+    const tagCountMap = new Map<string, number>()
+    for (const item of cloudItems) {
+      tagCountMap.set(item.name, item.articleCount)
+    }
+    // 数据库变更后 busi_category 只保留一级分类（parentId=0），后端将 0 转为 null 返回
+    const topCategories = all.filter((c: Category) => !c.parentId)
+    // 将一级分类的 articleCount 改为关联二级标签的计数总和
+    categories.value = topCategories.map(cat => {
+      const tagNames = getTagsByCategoryId(cat.id)
+      const total = tagNames.reduce((sum, name) => sum + (tagCountMap.get(name) ?? 0), 0)
+      return { ...cat, articleCount: total }
+    })
+  } finally { loading.value = false }
 }
 
 // 页面重新可见时刷新（发布/撤回文章后切回首页）
@@ -54,7 +73,7 @@ onUnmounted(() => {
 })
 
 // 路由 query 变化（如切换分类）也触发刷新
-watch(() => route.query, () => fetchCategories())
+watch(() => route.query.catId, () => fetchCategories())
 
 // 按 (name, parentId) 去重，保留最小 ID 的记录
 const dedupCategories = computed(() => {

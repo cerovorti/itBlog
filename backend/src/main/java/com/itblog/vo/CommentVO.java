@@ -15,6 +15,7 @@ public class CommentVO {
     private String content;
     private LocalDateTime createTime;
     private List<CommentVO> children;
+    private Integer replyCount;
 
     public CommentVO() {}
 
@@ -30,6 +31,7 @@ public class CommentVO {
     public String getContent() { return content; } public void setContent(String v) { this.content = v; }
     public LocalDateTime getCreateTime() { return createTime; } public void setCreateTime(LocalDateTime v) { this.createTime = v; }
     public List<CommentVO> getChildren() { return children; } public void setChildren(List<CommentVO> v) { this.children = v; }
+    public Integer getReplyCount() { return replyCount; } public void setReplyCount(Integer v) { this.replyCount = v; }
 
     // Builder
     public static Builder builder() { return new Builder(); }
@@ -46,6 +48,7 @@ public class CommentVO {
         public Builder content(String v) { vo.content = v; return this; }
         public Builder createTime(LocalDateTime v) { vo.createTime = v; return this; }
         public Builder children(List<CommentVO> v) { vo.children = v; return this; }
+        public Builder replyCount(Integer v) { vo.replyCount = v; return this; }
         public CommentVO build() { return vo; }
     }
 }

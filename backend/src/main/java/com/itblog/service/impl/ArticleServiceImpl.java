@@ -190,10 +190,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             vo.setFavorited(favoriteMapper.selectCount(fw) > 0);
         }
 
-        // 上一篇：发布时间早于当前文章的最新一篇
+        // 上一篇：同一作者中发布时间早于当前文章的最新一篇
         LambdaQueryWrapper<Article> prevWrapper = new LambdaQueryWrapper<>();
         prevWrapper.eq(Article::getIsDeleted, 0);
         prevWrapper.eq(Article::getStatus, 1);
+        prevWrapper.eq(Article::getAuthorId, article.getAuthorId());
         prevWrapper.lt(Article::getCreateTime, article.getCreateTime());
         prevWrapper.orderByDesc(Article::getCreateTime);
         prevWrapper.last("LIMIT 1");
@@ -202,10 +203,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             vo.setPrevArticle(toArticleVO(prevArticle));
         }
 
-        // 下一篇：发布时间晚于当前文章的最早一篇
+        // 下一篇：同一作者中发布时间晚于当前文章的最早一篇
         LambdaQueryWrapper<Article> nextWrapper = new LambdaQueryWrapper<>();
         nextWrapper.eq(Article::getIsDeleted, 0);
         nextWrapper.eq(Article::getStatus, 1);
+        nextWrapper.eq(Article::getAuthorId, article.getAuthorId());
         nextWrapper.gt(Article::getCreateTime, article.getCreateTime());
         nextWrapper.orderByAsc(Article::getCreateTime);
         nextWrapper.last("LIMIT 1");

@@ -59,6 +59,10 @@ export function getMyArticles(page = 1, size = 10) {
   return request.get('/article/my', { params: { page, size } })
 }
 
+export function getUserArticles(userId: number, page = 1, size = 10) {
+  return request.get(`/article/user/${userId}`, { params: { page, size } })
+}
+
 export function getDrafts(page = 1, size = 10) {
   return request.get('/article/drafts', { params: { page, size } })
 }

@@ -7,8 +7,8 @@
       <el-form @submit.prevent="handleRegister">
         <div class="input-group"><span class="input-icon">👤</span><input v-model="username" placeholder="用户名 (2-20位)" class="auth-input" /></div>
         <div class="input-group"><span class="input-icon">📧</span><input v-model="email" placeholder="邮箱" class="auth-input" /></div>
-        <div class="input-group"><span class="input-icon">🔒</span><input v-model="password" type="password" placeholder="密码 (8位以上,含字母+数字)" class="auth-input" /></div>
-        <div class="input-group"><span class="input-icon">🔒</span><input v-model="confirmPassword" type="password" placeholder="确认密码" class="auth-input" /></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input v-model="password" :type="showPwd ? 'text' : 'password'" placeholder="密码 (8位以上,含字母+数字)" class="auth-input" /><span class="pwd-toggle" @click="showPwd = !showPwd">{{ showPwd ? '🙈' : '👁' }}</span></div>
+        <div class="input-group"><span class="input-icon">🔒</span><input v-model="confirmPassword" :type="showConfirmPwd ? 'text' : 'password'" placeholder="确认密码" class="auth-input" /><span class="pwd-toggle" @click="showConfirmPwd = !showConfirmPwd">{{ showConfirmPwd ? '🙈' : '👁' }}</span></div>
         <button type="submit" class="btn-auth" :disabled="loading">{{ loading ? '注册中...' : '注 册' }}</button>
       </el-form>
       <p class="auth-switch">已有账号？<router-link to="/login">去登录 →</router-link></p>
@@ -23,7 +23,7 @@ import { ElMessage } from 'element-plus'
 import { register } from '../api/auth'
 const router = useRouter()
 const username = ref(''); const email = ref('')
-const password = ref(''); const confirmPassword = ref(''); const loading = ref(false)
+const password = ref(''); const confirmPassword = ref(''); const showPwd = ref(false); const showConfirmPwd = ref(false); const loading = ref(false)
 async function handleRegister() {
   if (!username.value || !email.value || !password.value || !confirmPassword.value) { ElMessage.warning('请填写所有字段'); return }
   if (password.value.length < 8 || !/[a-zA-Z]/.test(password.value) || !/[0-9]/.test(password.value)) { ElMessage.warning('密码需8位以上且包含字母和数字'); return }
@@ -51,6 +51,7 @@ async function handleRegister() {
 .input-group:focus-within { border-color: var(--primary-light); box-shadow: 0 0 0 3px var(--input-focus-shadow); }
 .input-icon { font-size: 16px; flex-shrink: 0; }
 .auth-input { flex: 1; border: none; outline: none; font-size: 15px; background: transparent; color: var(--text); }
+.pwd-toggle { font-size: 16px; cursor: pointer; flex-shrink: 0; user-select: none; }
 .btn-auth { width: 100%; padding: 13px; border: none; border-radius: var(--radius-md); background: var(--primary-gradient); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: all var(--transition-normal); }
 .btn-auth:hover { transform: translateY(-2px); box-shadow: var(--shadow-float); }
 .btn-auth:disabled { opacity: 0.6; }

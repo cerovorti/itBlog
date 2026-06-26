@@ -35,7 +35,10 @@
         <el-skeleton v-if="loading" :rows="5" animated />
         <el-empty v-else-if="drafts.length === 0" description="暂无草稿" />
         <div v-for="d in drafts" :key="'d'+d.id" class="draft-row">
-          <router-link :to="`/editor/${d.id}`">{{ d.title || '无标题' }}</router-link>
+          <div class="draft-left">
+            <router-link :to="`/editor/${d.id}`">{{ d.title || '无标题' }}</router-link>
+            <span class="draft-datetime">{{ formatDateTime(d.updateTime) }}</span>
+          </div>
           <span class="draft-right">
             <span class="draft-date">{{ formatRelativeTime(d.updateTime) }}</span>
             <button class="draft-del" @click="deleteDraft(d)" :disabled="deleting === d.id">🗑️</button>
@@ -46,7 +49,7 @@
         <div class="settings-panel">
           <h3>个人设置</h3>
           <div class="setting-item"><label>个性签名</label><input v-model="editBio" placeholder="写一句话..." class="set-input" /></div>
-          <div class="setting-item"><label>技术栈</label><input v-model="editSkills" placeholder="用逗号分隔，如: Spring Boot, Vue 3, TypeScript" class="set-input" /></div>
+          <div class="setting-item"><label>技术栈</label><input v-model="editSkills" placeholder="用英文逗号分隔，如: Spring Boot, Vue 3, TypeScript" class="set-input" /></div>
           <div class="setting-item"><label>头像</label><div class="avatar-edit"><UserAvatar :username="profile.username" :src="editAvatar" :size="48" /><el-upload :auto-upload="true" :show-file-list="false" :http-request="handleAvatarUpload" accept="image/*"><el-button size="small">上传头像</el-button></el-upload></div></div>
           <button class="save-btn" @click="saveProfile" :disabled="saving">{{ saving ? '保存中...' : '保存设置' }}</button>
         </div>
@@ -56,20 +59,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getUserProfile, getMyProfile, updateProfile, type UserVO } from '../api/user'
-import { getMyArticles, getDrafts, deleteArticle, type ArticleVO } from '../api/article'
-import { getFavoriteList } from '../api/favorite'
+import { getMyArticles, getUserArticles, getDrafts, deleteArticle, type ArticleVO } from '../api/article'
+import { getFavoriteList, getUserFavoriteList } from '../api/favorite'
 import { uploadImage } from '../api/upload'
 import { useUserStore } from '../stores/user'
 import UserAvatar from '../components/common/UserAvatar.vue'
 import ArticleCard from '../components/ArticleCard.vue'
 
 const route = useRoute(); const userStore = useUserStore()
-const userId = route.params.userId ? Number(route.params.userId) : null
-const isSelf = computed(() => !userId || userStore.user?.id === userId)
+const userId = computed(() => route.params.userId ? Number(route.params.userId) : null)
+const isSelf = computed(() => !userId.value || userStore.user?.id === userId.value)
 const DARK_KEY = 'demo_album_dark_manual'
 const profile = ref<UserVO | null>(null); const activeTab = ref('published')
 const loading = ref(true); const articles = ref<ArticleVO[]>([]); const total = ref(0); const page = ref(1)
@@ -84,10 +87,10 @@ const tabs = computed(() => {
 })
 
 async function loadProfile() {
-  try { profile.value = isSelf.value ? (await getMyProfile()).data : (await getUserProfile(userId!)).data; editBio.value = profile.value?.bio || ''; editSkills.value = profile.value?.skills || ''; editAvatar.value = profile.value?.avatar || '' } catch {}
+  try { profile.value = isSelf.value ? (await getMyProfile()).data : (await getUserProfile(userId.value!)).data; editBio.value = profile.value?.bio || ''; editSkills.value = profile.value?.skills || ''; editAvatar.value = profile.value?.avatar || '' } catch {}
 }
-async function loadPublished() { loading.value = true; try { const r = await getMyArticles(page.value); articles.value = r.data.records || []; total.value = r.data.total || 0 } finally { loading.value = false } }
-async function loadFavorites() { loading.value = true; try { favArticles.value = ((await getFavoriteList()).data.records || []) } finally { loading.value = false } }
+async function loadPublished() { loading.value = true; try { const r = isSelf.value ? (await getMyArticles(page.value)) : (await getUserArticles(userId.value!, page.value)); articles.value = r.data.records || []; total.value = r.data.total || 0 } finally { loading.value = false } }
+async function loadFavorites() { loading.value = true; try { favArticles.value = (isSelf.value ? ((await getFavoriteList()).data.records || []) : ((await getUserFavoriteList(userId.value!)).data.records || [])) } finally { loading.value = false } }
 async function loadDrafts() { loading.value = true; try { drafts.value = ((await getDrafts()).data.records || []) } finally { loading.value = false } }
 async function switchTab(t: string) { activeTab.value = t; if (t === 'published') loadPublished(); else if (t === 'favorites') loadFavorites(); else if (t === 'drafts') loadDrafts() }
 function handlePageChange(p: number) { page.value = p; loadPublished() }
@@ -102,6 +105,11 @@ async function deleteDraft(d: ArticleVO) {
 }
 function toggleDark(v: boolean) { localStorage.setItem(DARK_KEY, String(v)); document.getElementById('app-container')?.classList.toggle('dark', v) }
 function formatDate(s: string) { return s ? new Date(s).toLocaleDateString('zh-CN') : '' }
+function formatDateTime(s: string): string {
+  if (!s) return ''
+  const d = new Date(s)
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
 function formatRelativeTime(s: string): string {
   if (!s) return ''
   const d = new Date(s)
@@ -114,6 +122,15 @@ function formatRelativeTime(s: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 onMounted(async () => { await loadProfile(); loadPublished() })
+
+// 修复：同一组件复用下路由参数变化时重新加载
+watch(() => route.params.userId, async (newUserId, oldUserId) => {
+  // 同一组件复用下路由参数变化时重新加载（包括他人主页↔自己主页）
+  if (newUserId === oldUserId) return
+  activeTab.value = 'published'
+  await loadProfile()
+  loadPublished()
+})
 </script>
 
 <style scoped>
@@ -136,6 +153,8 @@ onMounted(async () => { await loadProfile(); loadPublished() })
 .tab-content { max-width: 800px; margin: 0 auto; }
 .pagination { margin-top: 20px; display: flex; justify-content: center; }
 .draft-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--card-border); background: var(--card-bg); border-radius: var(--radius-sm); margin-bottom: 6px; }
+.draft-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.draft-datetime { font-size: 12px; color: var(--text-muted); }
 .draft-row a { color: var(--text); text-decoration: none; font-weight: 500; }
 .draft-row a:hover { color: var(--primary); }
 .draft-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }

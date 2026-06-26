@@ -19,7 +19,7 @@
           </div>
         </div>
       </div>
-      <SubCategoryBar :items="subCategories" :activeId="subCatId" @select="onSubCatSelect" />
+      <SubCategoryBar :items="subTags" :activeId="subTagId" @select="onSubTagSelect" />
       <ArticleList :articles="articles" :loading="loading" :total="total" :current-page="page" :page-size="pageSize" :mode="viewMode" empty-text="还没有文章，快去写一篇吧！" @page-change="handlePageChange" />
     </div>
     <aside class="sidebar"><CategoryCloud /><HotArticles /><RecommendedAuthors /></aside>
@@ -29,7 +29,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'; import { useRoute } from 'vue-router'
 import { getArticleList, type ArticleVO } from '../api/article'
-import { getCategoryList, type Category } from '../api/category'
+import { getTagCloud, getTagList, type Tag, type TagCloudItem } from '../api/tag'
+import { getTagsByCategoryId } from '../utils/categoryTagMapping'
 import ArticleList from '../components/article/ArticleList.vue'
 import SubCategoryBar from '../components/article/SubCategoryBar.vue'
 import CategoryCloud from '../components/sidebar/CategoryCloud.vue'
@@ -40,19 +41,36 @@ const route = useRoute(); const articles = ref<ArticleVO[]>([])
 const sort = ref('popular'); const page = ref(1); const total = ref(0); const loading = ref(true)
 const viewMode = ref<'list' | 'waterfall'>('list')
 const pageSize = ref(10)
-const subCategories = ref<Category[]>([])
-const subCatId = ref<number | undefined>()
+// 二级标签筛选器数据（对应选中一级分类下的标签列表，含文章数量）
+interface SubTagItem { id: number; name: string; articleCount?: number }
+const subTags = ref<SubTagItem[]>([])
+const subTagId = ref<number | undefined>()
 
-async function loadSubCategories(parentId: number) {
-  try { const r = await getCategoryList(); subCategories.value = (r.data || []).filter((c: Category) => c.parentId === parentId) } catch { subCategories.value = [] }
+async function loadSubTags(categoryId: number) {
+  try {
+    const tagNames = getTagsByCategoryId(categoryId)
+    const [tagListRes, tagCloudRes] = await Promise.all([getTagList(), getTagCloud()])
+    const allTags: Tag[] = tagListRes.data || []
+    const cloudItems: TagCloudItem[] = tagCloudRes.data || []
+    const countMap = new Map<number, number>()
+    for (const item of cloudItems) {
+      countMap.set(item.id, item.articleCount)
+    }
+    subTags.value = allTags
+      .filter(t => tagNames.includes(t.name))
+      .map(t => ({ id: t.id, name: t.name, articleCount: countMap.get(t.id) ?? 0 }))
+    // 默认选中第一个有内容的二级标签（articleCount > 0）
+    const firstWithContent = subTags.value.find(t => (t.articleCount ?? 0) > 0)
+    subTagId.value = firstWithContent ? firstWithContent.id : undefined
+  } catch { subTags.value = []; subTagId.value = undefined }
 }
-async function fetchArticles() { loading.value = true; try { const catId = route.query.catId ? Number(route.query.catId) : undefined; const res = await getArticleList({ page: page.value, size: pageSize.value, sort: sort.value, tagId: undefined, categoryId: subCatId.value !== undefined ? subCatId.value : catId }); articles.value = res.data.records || []; total.value = res.data.total || 0; if (catId) loadSubCategories(catId); else subCategories.value = [] } finally { loading.value = false } }
-function onSubCatSelect(id?: number) { subCatId.value = id; page.value = 1; fetchArticles() }
+async function fetchArticles() { loading.value = true; try { const catId = route.query.catId ? Number(route.query.catId) : undefined; if (catId && subTagId.value === undefined) { await loadSubTags(catId) } else if (!catId) { subTags.value = []; subTagId.value = undefined } const res = await getArticleList({ page: page.value, size: pageSize.value, sort: sort.value, tagId: subTagId.value !== undefined ? subTagId.value : undefined, categoryId: subTagId.value !== undefined ? undefined : catId }); articles.value = res.data.records || []; total.value = res.data.total || 0 } finally { loading.value = false } }
+function onSubTagSelect(id?: number) { subTagId.value = id; page.value = 1; fetchArticles() }
 function switchSort(s: string) { sort.value = s; page.value = 1; fetchArticles() }
 function handlePageChange(p: number) { page.value = p; fetchArticles(); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 function handlePageSizeChange() { page.value = 1; fetchArticles() }
 onMounted(fetchArticles)
-watch(() => route.query, () => { page.value = 1; fetchArticles() })
+watch(() => route.query.catId, (newVal) => { page.value = 1; subTagId.value = undefined; fetchArticles() })
 </script>
 
 <style scoped>
