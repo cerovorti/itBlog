@@ -50,8 +50,7 @@ public class AdminController {
             else draftArticles++;
         }
         // 用户数
-        List<UserVO> users = userService.getAllUsers(1, 1000);
-        long totalUsers = users.size();
+        long totalUsers = userService.countAllUsers();
 
         // 最近5篇文章
         PageVO<ArticleVO> recent = articleService.getArticleList(1, 5, "latest", null, null, false);

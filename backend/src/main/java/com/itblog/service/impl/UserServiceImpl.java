@@ -171,6 +171,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public long countAllUsers() {
+        return userMapper.selectCount(null);
+    }
+
+    @Override
     public void setRecommended(Long userId, boolean recommended) {
         User user = userMapper.selectById(userId);
         if (user == null) throw new BusinessException("User not found");

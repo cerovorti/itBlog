@@ -17,6 +17,7 @@ public interface UserService {
     User getById(Long userId);
     List<UserVO> getRecommendedAuthors();
     List<UserVO> getAllUsers(int page, int size);
+    long countAllUsers();
     void setRecommended(Long userId, boolean recommended);
     void banUser(Long userId, boolean ban, Integer hours, boolean permanent);
 }

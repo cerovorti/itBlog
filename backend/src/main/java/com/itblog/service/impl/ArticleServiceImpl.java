@@ -151,7 +151,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             }
         }
 
-        return new PageVO<>(voList, voList.size(), page, size);
+        return new PageVO<>(voList, articlePage.getTotal(), page, size);
     }
 
     @Override

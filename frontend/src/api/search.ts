@@ -1,7 +1,7 @@
 import request from './request'
 
 export function recordSearchHistory(keyword: string) {
-  return request.post('/search/history', null, { params: { keyword } })
+  return request.post('/search/history', {}, { params: { keyword } })
 }
 
 export function getSearchHistory() {

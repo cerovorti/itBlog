@@ -12,8 +12,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class FavoriteServiceImpl implements FavoriteService {
@@ -75,14 +74,53 @@ public class FavoriteServiceImpl implements FavoriteService {
         wrapper.orderByDesc(Favorite::getCreateTime);
         Page<Favorite> favPage = favoriteMapper.selectPage(pageParam, wrapper);
 
-        List<ArticleVO> voList = new ArrayList<>();
+        // 批量查询文章，避免 N+1
+        List<Long> articleIds = new ArrayList<>();
         for (Favorite fav : favPage.getRecords()) {
-            Article article = articleMapper.selectById(fav.getArticleId());
-            if (article != null && article.getIsDeleted() == 0) {
-                voList.add(toArticleVO(article));
+            articleIds.add(fav.getArticleId());
+        }
+
+        List<ArticleVO> voList = new ArrayList<>();
+        long validTotal = 0;
+        if (!articleIds.isEmpty()) {
+            // 批量查出所有文章并过滤已删除
+            List<Article> articles = articleMapper.selectBatchIds(articleIds);
+            Map<Long, Article> articleMap = new HashMap<>();
+            for (Article a : articles) {
+                if (a.getIsDeleted() == 0) {
+                    articleMap.put(a.getId(), a);
+                }
+            }
+            // 按收藏顺序组装结果
+            for (Favorite fav : favPage.getRecords()) {
+                Article article = articleMap.get(fav.getArticleId());
+                if (article != null) {
+                    voList.add(toArticleVO(article));
+                    validTotal++;
+                }
             }
         }
-        return new PageVO<>(voList, favPage.getTotal(), page, size);
+
+        // 统计所有有效收藏数作为 total（查未被删除的文章总数）
+        long realTotal = validTotal;
+        if (articleIds.isEmpty()) {
+            // 需要额外查总数
+            LambdaQueryWrapper<Favorite> countWrapper = new LambdaQueryWrapper<>();
+            countWrapper.eq(Favorite::getUserId, userId);
+            List<Favorite> allFavs = favoriteMapper.selectList(countWrapper);
+            if (!allFavs.isEmpty()) {
+                List<Long> allArticleIds = new ArrayList<>();
+                for (Favorite fav : allFavs) {
+                    allArticleIds.add(fav.getArticleId());
+                }
+                List<Article> allArticles = articleMapper.selectBatchIds(allArticleIds);
+                for (Article a : allArticles) {
+                    if (a.getIsDeleted() == 0) realTotal++;
+                }
+            }
+        }
+
+        return new PageVO<>(voList, validTotal > 0 ? favPage.getTotal() : realTotal, page, size);
     }
 
     private ArticleVO toArticleVO(Article article) {
