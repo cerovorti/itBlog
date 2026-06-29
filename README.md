@@ -180,10 +180,10 @@ cd it-blog
 # 登录 MySQL 后执行
 CREATE DATABASE IF NOT EXISTS demo_album DEFAULT CHARSET utf8mb4;
 USE demo_album;
-SOURCE backend/src/main/resources/db/init.sql;
+SOURCE backend/src/main/resources/db/demo_album_init.sql;
 ```
 
-或直接导入：`backend/src/main/resources/db/demo_album.sql`
+或直接导入：`backend/src/main/resources/db/demo_album_20260629_105013.sql`
 
 ### 3. 修改配置
 
