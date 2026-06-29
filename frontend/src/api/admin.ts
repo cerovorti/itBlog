@@ -39,3 +39,7 @@ export function setUserRecommend(userId: number, recommended: boolean) {
 export function banUser(userId: number, ban: boolean, hours?: number, permanent?: boolean) {
   return request.put(`/admin/user/${userId}/ban`, { ban, hours, permanent })
 }
+
+export function adminResetPassword(userId: number, newPassword: string) {
+  return request.put(`/admin/user/${userId}/password`, { newPassword })
+}

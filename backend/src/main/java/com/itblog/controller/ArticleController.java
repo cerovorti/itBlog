@@ -47,15 +47,18 @@ public class ArticleController {
             HttpServletRequest httpReq) {
         User user = (User) httpReq.getAttribute("currentUser");
         if (user == null) return Result.unauthorized("请先登录");
-        return Result.ok(articleService.getMyArticles(page, size, user.getId()));
+        return Result.ok(articleService.getMyArticles(page, size, user.getId(), true));
     }
 
     @GetMapping("/user/{userId}")
     public Result<PageVO<ArticleVO>> userArticles(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return Result.ok(articleService.getMyArticles(page, size, userId));
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        User currentUser = (User) request.getAttribute("currentUser");
+        boolean includePending = currentUser != null && currentUser.getId().equals(userId);
+        return Result.ok(articleService.getMyArticles(page, size, userId, includePending));
     }
 
     @GetMapping("/drafts")
@@ -99,6 +102,37 @@ public class ArticleController {
         if (user == null) return Result.unauthorized("请先登录");
         boolean isAdmin = user.getRole() == 1;
         articleService.deleteArticle(id, user.getId(), isAdmin);
+        return Result.ok();
+    }
+
+    // ==== 管理员审核接口 ====
+
+    @GetMapping("/pending")
+    public Result<PageVO<ArticleVO>> pending(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest httpReq) {
+        User user = (User) httpReq.getAttribute("currentUser");
+        if (user == null) return Result.unauthorized("请先登录");
+        if (user.getRole() != 1) return Result.unauthorized("需要管理员权限");
+        return Result.ok(articleService.getPendingArticles(page, size));
+    }
+
+    @PutMapping("/{id}/approve")
+    public Result<?> approve(@PathVariable Long id, HttpServletRequest httpReq) {
+        User user = (User) httpReq.getAttribute("currentUser");
+        if (user == null) return Result.unauthorized("请先登录");
+        if (user.getRole() != 1) return Result.unauthorized("需要管理员权限");
+        articleService.approveArticle(id);
+        return Result.ok();
+    }
+
+    @PutMapping("/{id}/reject")
+    public Result<?> reject(@PathVariable Long id, HttpServletRequest httpReq) {
+        User user = (User) httpReq.getAttribute("currentUser");
+        if (user == null) return Result.unauthorized("请先登录");
+        if (user.getRole() != 1) return Result.unauthorized("需要管理员权限");
+        articleService.rejectArticle(id);
         return Result.ok();
     }
 }

@@ -18,6 +18,8 @@ public class ArticleVO {
     private Integer likeCount;
     private Integer commentCount;
     private Integer status;
+    /** 是否有待审核的新版本：0=无，1=有 */
+    private Integer reviewStatus;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -37,6 +39,7 @@ public class ArticleVO {
     public Integer getLikeCount() { return likeCount; } public void setLikeCount(Integer v) { likeCount = v; }
     public Integer getCommentCount() { return commentCount; } public void setCommentCount(Integer v) { commentCount = v; }
     public Integer getStatus() { return status; } public void setStatus(Integer v) { status = v; }
+    public Integer getReviewStatus() { return reviewStatus; } public void setReviewStatus(Integer v) { reviewStatus = v; }
     public LocalDateTime getCreateTime() { return createTime; } public void setCreateTime(LocalDateTime v) { createTime = v; }
     public LocalDateTime getUpdateTime() { return updateTime; } public void setUpdateTime(LocalDateTime v) { updateTime = v; }
 }

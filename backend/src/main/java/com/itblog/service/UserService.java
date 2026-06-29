@@ -20,4 +20,6 @@ public interface UserService {
     long countAllUsers();
     void setRecommended(Long userId, boolean recommended);
     void banUser(Long userId, boolean ban, Integer hours, boolean permanent);
+    void changePassword(Long userId, String oldPassword, String newPassword);
+    void adminResetPassword(Long userId, String newPassword);
 }

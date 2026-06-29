@@ -12,7 +12,7 @@
     </nav>
     <div class="admin-main">
       <h2 class="page-title">📁 分类管理</h2>
-      <div class="add-row"><el-input v-model="newName" placeholder="新分类名称" size="default" style="width:200px" /><el-select v-model="newParent" placeholder="父级(可选)" clearable size="default" style="width:180px;margin-left:8px"><el-option v-for="c in allCats" :key="c.id" :label="c.name" :value="c.id" /></el-select><el-button type="primary" @click="addCat" style="margin-left:8px">添加</el-button></div>
+      <div class="add-row"><el-input v-model="newName" placeholder="新分类名称" size="default" style="width:200px" /><el-button type="primary" @click="addCat" style="margin-left:8px">添加</el-button></div>
       <el-table :data="allCats" style="margin-top:16px" v-loading="loading">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="name" label="名称" />
@@ -29,10 +29,10 @@ import { getCategoryList, type Category } from '../../api/category'
 import { addAdminCategory, deleteAdminCategory } from '../../api/admin'
 
 const allCats = ref<Category[]>([]); const loading = ref(true)
-const newName = ref(''); const newParent = ref<number | null>(null)
+const newName = ref('')
 
 async function fetch() { loading.value = true; try { allCats.value = (await getCategoryList()).data || [] } finally { loading.value = false } }
-async function addCat() { if (!newName.value.trim()) return; try { await addAdminCategory(newName.value, newParent.value || 0); newName.value = ''; newParent.value = null; ElMessage.success('添加成功'); fetch() } catch {} }
+async function addCat() { if (!newName.value.trim()) return; try { await addAdminCategory(newName.value, 0); newName.value = ''; ElMessage.success('添加成功'); fetch() } catch {} }
 async function delCat(id: number) { try { await deleteAdminCategory(id); ElMessage.success('已删除'); fetch() } catch {} }
 onMounted(fetch)
 </script>

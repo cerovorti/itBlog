@@ -145,4 +145,16 @@ public class AdminController {
         userService.banUser(id, ban, hours, permanent);
         return Result.ok();
     }
+
+    @PutMapping("/user/{id}/password")
+    public Result<?> resetUserPassword(@PathVariable Long id,
+                                        @RequestBody Map<String, String> body,
+                                        HttpServletRequest request) {
+        if (!checkAdmin(request)) return Result.forbidden("需要管理员权限");
+        String newPassword = body.get("newPassword");
+        if (newPassword == null || newPassword.isBlank()) return Result.fail("新密码不能为空");
+        if (newPassword.length() < 6) return Result.fail("新密码长度不能少于6位");
+        userService.adminResetPassword(id, newPassword);
+        return Result.ok();
+    }
 }

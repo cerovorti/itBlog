@@ -203,6 +203,25 @@ public class UserServiceImpl implements UserService {
         userMapper.updateById(user);
     }
 
+    @Override
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("User not found");
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BusinessException("原密码错误");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public void adminResetPassword(Long userId, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) throw new BusinessException("User not found");
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+    }
+
     private UserVO toVO(User user) {
         return UserVO.builder()
                 .id(user.getId()).username(user.getUsername())

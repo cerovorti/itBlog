@@ -30,3 +30,11 @@ export function updateProfile(data: { avatar?: string; bio?: string; skills?: st
 export function getRecommendedAuthors() {
   return request.get('/user/recommended-authors')
 }
+
+export function changePassword(data: { oldPassword: string; newPassword: string }) {
+  return request.put('/user/password', data)
+}
+
+export function adminResetPassword(userId: number, data: { newPassword: string }) {
+  return request.put(`/admin/user/${userId}/password`, data)
+}

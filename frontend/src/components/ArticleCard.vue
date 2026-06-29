@@ -3,7 +3,10 @@
     <div class="card-cover" v-if="article.coverImg"><img :src="article.coverImg" :alt="article.title" /></div>
     <div class="card-cover placeholder" v-else><span>{{ placeholderIcon }}</span></div>
     <div class="card-body">
-      <h3 class="card-title">{{ article.title }}</h3>
+      <h3 class="card-title">{{ article.title }}
+        <span v-if="article.status === 2" class="review-badge status-pending">审核中</span>
+        <span v-else-if="article.reviewStatus === 1" class="review-badge status-reviewing">待审</span>
+      </h3>
       <p class="card-summary" v-if="article.summary">{{ article.summary }}</p>
       <div class="card-meta">
         <span class="meta-author"><span class="author-dot" :style="{ background: authorColor }"></span>{{ article.authorName }}</span>
@@ -52,4 +55,7 @@ function formatDate(s: string) { if (!s) return ''; const d = new Date(s); const
 .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .card-tag { padding: 2px 10px; border-radius: 10px; font-size: 11px; color: var(--text-secondary); }
 .card-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+.review-badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
+.status-pending { background: #FFF3E0; color: #E65100; }
+.status-reviewing { background: #FFF3E0; color: #E65100; }
 </style>

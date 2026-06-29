@@ -15,6 +15,7 @@ export interface ArticleVO {
   likeCount: number
   commentCount: number
   status: number
+  reviewStatus?: number
   createTime: string
   updateTime: string
 }
@@ -22,6 +23,7 @@ export interface ArticleVO {
 export interface ArticleDetailVO {
   article: ArticleVO
   content: string
+  draftContent?: string
   toc: TocItem[]
   liked: boolean
   favorited: boolean
@@ -80,4 +82,17 @@ export function updateArticle(id: number, data: any) {
 
 export function deleteArticle(id: number) {
   return request.delete(`/article/${id}`)
+}
+
+// 管理员接口
+export function getPendingArticles(page = 1, size = 10) {
+  return request.get('/article/pending', { params: { page, size } })
+}
+
+export function approveArticle(id: number) {
+  return request.put(`/article/${id}/approve`)
+}
+
+export function rejectArticle(id: number) {
+  return request.put(`/article/${id}/reject`)
 }

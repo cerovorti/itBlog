@@ -10,8 +10,9 @@
       </div>
       <div class="tb-right">
         <button class="tb-btn draft" @click="saveDraft" :disabled="saving">{{ saving ? '保存中...' : '💾 存草稿' }}</button>
-        <button class="tb-btn publish" @click="publish" :disabled="publishing">{{ publishing ? '发布中...' : '🚀 发布' }}</button>
+        <button class="tb-btn publish" @click="publish" :disabled="publishing">{{ publishing ? '提交中...' : '🚀 发布' }}</button>
         <button v-if="editId && detail?.article?.status === 1" class="tb-btn withdraw" @click="withdrawToDraft">↩ 撤回草稿</button>
+        <span v-if="editId && (detail?.article?.status === 2 || detail?.article?.reviewStatus === 1)" class="tb-reviewing">⏳ 审核中</span>
       </div>
     </div>
 
@@ -141,7 +142,9 @@ onMounted(async () => {
   if (editId.value) {
     const r = await getArticleDetail(editId.value)
     const d = r.data; detail.value = d
-    title.value = d.article.title === '无标题' ? '' : d.article.title; summary.value = d.article.summary || ''; content.value = d.content
+    title.value = d.article.title === '无标题' ? '' : d.article.title
+    summary.value = d.draftContent ? (d.article.summary || '') : (d.article.summary || '')
+    content.value = d.draftContent || d.content
     coverImg.value = d.article.coverImg || ''; categoryId.value = d.article.categoryId
     if (d.article.tags) for (const tn of d.article.tags) {
       const f = allTags.value.find(t => t.name === tn)
@@ -164,7 +167,7 @@ watch(() => route.params.id, async (newId) => {
     const d = r.data; detail.value = d
     title.value = d.article.title === '无标题' ? '' : d.article.title
     summary.value = d.article.summary || ''
-    content.value = d.content
+    content.value = d.draftContent || d.content
     coverImg.value = d.article.coverImg || ''
     categoryId.value = d.article.categoryId
     selectedTags.value = []
@@ -215,7 +218,7 @@ async function submit(status: number, silent = false) {
   if (status === 0) saving.value = true; else publishing.value = true
   const titleText = title.value.trim() || '无标题'
   const d = { title: titleText, content: content.value, summary: summary.value, coverImg: coverImg.value, categoryId: categoryId.value || undefined, tagIds: selectedTagIds.value.length ? selectedTagIds.value : undefined, status }
-  try { if (editId.value) { await updateArticle(editId.value, d) } else { const r = await publishArticle(d); if (!editId.value) router.replace(`/editor/${r.data.id}`) } if (!silent) ElMessage.success(status === 1 ? '发布成功！' : '草稿已保存'); lastSaved.value = new Date().toLocaleTimeString('zh-CN'); if (status === 1) router.push('/') } catch { if (!silent) ElMessage.error('操作失败') } finally { saving.value = false; publishing.value = false } }
+      try { if (editId.value) { await updateArticle(editId.value, d) } else { const r = await publishArticle(d); if (!editId.value) router.replace(`/editor/${r.data.id}`) } if (!silent) ElMessage.success(status === 1 ? '已提交审核，请等待管理员审核' : '草稿已保存'); lastSaved.value = new Date().toLocaleTimeString('zh-CN'); if (status === 1) router.push('/') } catch { if (!silent) ElMessage.error('操作失败') } finally { saving.value = false; publishing.value = false } }
 async function withdrawToDraft() {
   await updateArticle(editId.value!, {
     title: title.value,
@@ -256,6 +259,8 @@ async function withdrawToDraft() {
 .tb-btn.withdraw { background: var(--card-bg); color: var(--accent-yellow); border: 1.5px solid var(--card-border); }
 :root.dark .tb-btn.withdraw { color: #F0C060; }
 .tb-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.tb-reviewing { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: var(--accent-yellow); background: rgba(240, 185, 11, 0.1); border: 1.5px solid rgba(240, 185, 11, 0.3); }
+:root.dark .tb-reviewing { color: #F0C060; }
 
 /* ===== 左侧设置卡片（fixed悬浮Dock：默认半隐，hover展开） ===== */
 .settings-card {

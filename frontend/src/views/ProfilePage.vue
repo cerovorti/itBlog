@@ -52,6 +52,11 @@
           <div class="setting-item"><label>技术栈</label><input v-model="editSkills" placeholder="用英文逗号分隔，如: Spring Boot, Vue 3, TypeScript" class="set-input" /></div>
           <div class="setting-item"><label>头像</label><div class="avatar-edit"><UserAvatar :username="profile.username" :src="editAvatar" :size="48" /><el-upload :auto-upload="true" :show-file-list="false" :http-request="handleAvatarUpload" accept="image/*"><el-button size="small">上传头像</el-button></el-upload></div></div>
           <button class="save-btn" @click="saveProfile" :disabled="saving">{{ saving ? '保存中...' : '保存设置' }}</button>
+          <h3 style="margin-top: 32px;">修改密码</h3>
+          <div class="setting-item"><label>原密码</label><input v-model="oldPassword" type="password" placeholder="请输入原密码" class="set-input" /></div>
+          <div class="setting-item"><label>新密码</label><input v-model="newPassword" type="password" placeholder="至少6位" class="set-input" /></div>
+          <div class="setting-item"><label>确认新密码</label><input v-model="confirmPassword" type="password" placeholder="再次输入新密码" class="set-input" /></div>
+          <button class="save-btn" @click="handleChangePassword" :disabled="changingPassword" style="margin-top: 8px;">{{ changingPassword ? '修改中...' : '修改密码' }}</button>
         </div>
       </template>
     </div>
@@ -62,7 +67,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getUserProfile, getMyProfile, updateProfile, type UserVO } from '../api/user'
+import { getUserProfile, getMyProfile, updateProfile, changePassword, type UserVO } from '../api/user'
 import { getMyArticles, getUserArticles, getDrafts, deleteArticle, type ArticleVO } from '../api/article'
 import { getFavoriteList, getUserFavoriteList } from '../api/favorite'
 import { uploadImage } from '../api/upload'
@@ -78,6 +83,7 @@ const profile = ref<UserVO | null>(null); const activeTab = ref('published')
 const loading = ref(true); const articles = ref<ArticleVO[]>([]); const total = ref(0); const page = ref(1)
 const favArticles = ref<ArticleVO[]>([]); const drafts = ref<ArticleVO[]>([])
 const editBio = ref(''); const editSkills = ref(''); const editAvatar = ref(''); const saving = ref(false); const deleting = ref<number | null>(null)
+const oldPassword = ref(''); const newPassword = ref(''); const confirmPassword = ref(''); const changingPassword = ref(false)
 const isDarkManual = ref(localStorage.getItem(DARK_KEY) === 'true')
 
 const tabs = computed(() => {
@@ -96,6 +102,19 @@ async function switchTab(t: string) { activeTab.value = t; if (t === 'published'
 function handlePageChange(p: number) { page.value = p; loadPublished() }
 async function handleAvatarUpload(o: any) { try { editAvatar.value = (await uploadImage(o.file)).data.url } catch { ElMessage.error('失败') } }
 async function saveProfile() { saving.value = true; try { await updateProfile({ avatar: editAvatar.value, bio: editBio.value, skills: editSkills.value }); if (profile.value) { profile.value.avatar = editAvatar.value; profile.value.bio = editBio.value; profile.value.skills = editSkills.value }; ElMessage.success('保存成功') } catch {} finally { saving.value = false } }
+async function handleChangePassword() {
+  if (!oldPassword.value) { ElMessage.warning('请输入原密码'); return }
+  if (!newPassword.value) { ElMessage.warning('请输入新密码'); return }
+  if (newPassword.value.length < 6) { ElMessage.warning('新密码长度不能少于6位'); return }
+  if (newPassword.value !== confirmPassword.value) { ElMessage.warning('两次输入的新密码不一致'); return }
+  changingPassword.value = true
+  try {
+    await changePassword({ oldPassword: oldPassword.value, newPassword: newPassword.value })
+    ElMessage.success('密码修改成功')
+    oldPassword.value = ''; newPassword.value = ''; confirmPassword.value = ''
+  } catch { ElMessage.error('密码修改失败') }
+  finally { changingPassword.value = false }
+}
 async function deleteDraft(d: ArticleVO) {
   if (!confirm(`确定删除草稿「${d.title || '无标题'}」？`)) return
   deleting.value = d.id

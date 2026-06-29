@@ -5,6 +5,8 @@ import java.util.List;
 public class ArticleDetailVO {
     private ArticleVO article;
     private String content;
+    /** 待审核的新内容（作者/管理员编辑时预览用） */
+    private String draftContent;
     private List<TocItem> toc;
     private Boolean liked;
     private Boolean favorited;
@@ -13,6 +15,7 @@ public class ArticleDetailVO {
 
     public ArticleVO getArticle() { return article; } public void setArticle(ArticleVO v) { this.article = v; }
     public String getContent() { return content; } public void setContent(String v) { this.content = v; }
+    public String getDraftContent() { return draftContent; } public void setDraftContent(String v) { this.draftContent = v; }
     public List<TocItem> getToc() { return toc; } public void setToc(List<TocItem> v) { this.toc = v; }
     public Boolean getLiked() { return liked; } public void setLiked(Boolean v) { this.liked = v; }
     public Boolean getFavorited() { return favorited; } public void setFavorited(Boolean v) { this.favorited = v; }

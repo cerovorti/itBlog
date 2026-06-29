@@ -50,13 +50,16 @@
             <el-switch :model-value="row.isRecommended === 1" @change="toggleRecommend(row)" size="small" />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
-            <el-button v-if="row.role !== 1" size="small"
-              :type="row.status === 0 ? 'success' : 'danger'"
-              @click="toggleBan(row)">
-              {{ row.status === 0 ? '解封' : '封禁' }}
-            </el-button>
+            <div v-if="row.role !== 1" style="display:flex;gap:6px;">
+              <el-button size="small"
+                :type="row.status === 0 ? 'success' : 'danger'"
+                @click="toggleBan(row)">
+                {{ row.status === 0 ? '解封' : '封禁' }}
+              </el-button>
+              <el-button size="small" @click="showResetPassword(row)">重置密码</el-button>
+            </div>
             <span v-else style="color:var(--text-muted);font-size:12px;">不可操作</span>
           </template>
         </el-table-column>
@@ -89,6 +92,18 @@
           <el-button type="danger" @click="confirmBan">确认封禁</el-button>
         </template>
       </el-dialog>
+
+      <!-- 重置密码弹窗 -->
+      <el-dialog v-model="resetPwdVisible" title="重置用户密码" width="400px">
+        <p style="margin-bottom:12px;color:var(--text);">
+          为 <strong>{{ resetPwdTarget?.username }}</strong> 设置新密码：
+        </p>
+        <el-input v-model="resetNewPassword" type="password" placeholder="请输入新密码（至少6位）" show-password />
+        <template #footer>
+          <el-button @click="resetPwdVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmResetPassword" :disabled="!resetNewPassword || resetNewPassword.length < 6">确认重置</el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -96,7 +111,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getAdminUsers, setUserRecommend, banUser } from '../../api/admin'
+import { getAdminUsers, setUserRecommend, banUser, adminResetPassword } from '../../api/admin'
 import type { UserVO } from '../../api/user'
 import UserAvatar from '../../components/common/UserAvatar.vue'
 
@@ -105,6 +120,10 @@ const loading = ref(true)
 const banDialogVisible = ref(false)
 const banTarget = ref<UserVO | null>(null)
 const banDuration = ref(168)
+
+const resetPwdVisible = ref(false)
+const resetPwdTarget = ref<UserVO | null>(null)
+const resetNewPassword = ref('')
 
 const hourOptions = [
   { label: '1小时', value: 1 }, { label: '3小时', value: 3 },
@@ -161,6 +180,21 @@ async function confirmBan() {
       row.status = 0
       ElMessage.success('封禁成功')
     }
+  } catch { ElMessage.error('操作失败') }
+}
+
+function showResetPassword(row: UserVO) {
+  resetPwdTarget.value = row
+  resetNewPassword.value = ''
+  resetPwdVisible.value = true
+}
+
+async function confirmResetPassword() {
+  if (!resetPwdTarget.value || !resetNewPassword.value || resetNewPassword.value.length < 6) return
+  try {
+    await adminResetPassword(resetPwdTarget.value.id, resetNewPassword.value)
+    ElMessage.success(`已重置「${resetPwdTarget.value.username}」的密码`)
+    resetPwdVisible.value = false
   } catch { ElMessage.error('操作失败') }
 }
 

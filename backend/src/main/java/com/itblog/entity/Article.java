@@ -21,6 +21,12 @@ public class Article {
     private String summary;
     private Integer status;
     private Integer isDeleted;
+    /** 待审核的新内容（编辑已发布文章时存于此，审核通过后覆盖 content） */
+    private String draftContent;
+    /** 待审核的新摘要 */
+    private String draftSummary;
+    /** 是否有待审核的新版本：0=无，1=有 */
+    private Integer reviewStatus;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
@@ -48,6 +54,12 @@ public class Article {
     public void setStatus(Integer status) { this.status = status; }
     public Integer getIsDeleted() { return isDeleted; }
     public void setIsDeleted(Integer isDeleted) { this.isDeleted = isDeleted; }
+    public String getDraftContent() { return draftContent; }
+    public void setDraftContent(String draftContent) { this.draftContent = draftContent; }
+    public String getDraftSummary() { return draftSummary; }
+    public void setDraftSummary(String draftSummary) { this.draftSummary = draftSummary; }
+    public Integer getReviewStatus() { return reviewStatus; }
+    public void setReviewStatus(Integer reviewStatus) { this.reviewStatus = reviewStatus; }
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
     public LocalDateTime getUpdateTime() { return updateTime; }

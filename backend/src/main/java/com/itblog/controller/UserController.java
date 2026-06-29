@@ -45,4 +45,18 @@ public class UserController {
     public Result<List<UserVO>> recommendedAuthors() {
         return Result.ok(userService.getRecommendedAuthors());
     }
+
+    @PutMapping("/password")
+    public Result<?> changePassword(@RequestBody Map<String, String> body,
+                                    HttpServletRequest request) {
+        User currentUser = (User) request.getAttribute("currentUser");
+        if (currentUser == null) return Result.unauthorized("请先登录");
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+        if (oldPassword == null || oldPassword.isBlank()) return Result.fail("原密码不能为空");
+        if (newPassword == null || newPassword.isBlank()) return Result.fail("新密码不能为空");
+        if (newPassword.length() < 6) return Result.fail("新密码长度不能少于6位");
+        userService.changePassword(currentUser.getId(), oldPassword, newPassword);
+        return Result.ok();
+    }
 }

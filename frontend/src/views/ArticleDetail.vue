@@ -5,7 +5,10 @@
       <img v-if="detail.article.coverImg" :src="detail.article.coverImg" class="cover-img" alt="封面" />
       <div v-else class="cover-placeholder"><span>📖</span></div>
 
-      <h1 class="article-title">{{ detail.article.title }}</h1>
+      <h1 class="article-title">{{ detail.article.title }}
+        <span v-if="detail.article.status === 2" class="review-badge status-pending">审核中</span>
+        <span v-else-if="detail.article.reviewStatus === 1" class="review-badge status-reviewing">待审</span>
+      </h1>
       <div class="article-meta">
         <UserAvatar :username="detail.article.authorName" :src="detail.article.authorAvatar" :size="28" />
         <router-link :to="`/profile/${detail.article.authorId}`" class="author-name">{{ detail.article.authorName }}</router-link>
@@ -285,5 +288,8 @@ watch(() => route.params.id, (newId) => {
 .btn-back-top { position: fixed; bottom: 40px; right: 40px; width: 46px; height: 46px; border-radius: 50%; background: var(--primary-gradient); color: #fff; border: none; font-size: 22px; cursor: pointer; box-shadow: var(--shadow-float); z-index: 50; transition: all var(--transition-normal); }
 .btn-back-top:hover { transform: translateY(-3px); }
 .skeleton-detail { max-width: 800px; margin: 0 auto; }
+.review-badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; font-weight: 500; }
+.status-pending { background: #FFF3E0; color: #E65100; }
+.status-reviewing { background: #FFF3E0; color: #E65100; }
 @media (max-width: 960px) { .left-space { display: none; } .article-toc { display: none; } }
 </style>
