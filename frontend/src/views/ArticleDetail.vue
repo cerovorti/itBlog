@@ -75,6 +75,8 @@ import CommentList from '../components/CommentList.vue'
 
 // Cherry Engine 用于 Markdown → HTML
 import CherryEngine from 'cherry-markdown/dist/cherry-markdown.engine.core'
+import '../styles/cherry-theme.css'
+
 const cherryEngine = new (CherryEngine as any)() as { makeHtml: (md: string) => string }
 const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
 const articleId = computed(() => Number(route.params.id))

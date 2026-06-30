@@ -93,7 +93,25 @@
 }
 
 /* ===== 预览区 Markdown 渲染样式 ===== */
+/* 独立定义变量，使 .cherry-markdown 不依赖 .cherry 祖先也能工作（文章详情页直接用 .cherry-markdown） */
 .cherry-markdown {
+  --ch-pre-bg: var(--bg);
+  --ch-pre-border: var(--card-border);
+  --ch-code-color: var(--primary);
+  --ch-code-bg: var(--primary-bg);
+  --ch-blockquote-bg: var(--bg);
+  --ch-blockquote-border: var(--primary);
+  --ch-table-border: var(--card-border);
+  --ch-table-th-bg: var(--bg);
+  --ch-link-color: var(--primary);
+  --ch-heading-color: var(--text);
+  --ch-hr-color: var(--card-border);
+
+  /* 覆盖 Cherry 原生 CSS 变量：Cherry 自己的规则 (cherry-markdown.css) 使用这些变量 */
+  /* 设置后即便 Cherry 的规则在级联中胜出，也会使用站点的主题颜色 */
+  --md-table-border: var(--card-border);
+  --md-inline-code-bg: var(--bg);
+
   color: var(--text);
   font-family: var(--font-body, system-ui);
   line-height: 1.8;
@@ -141,13 +159,15 @@
 }
 .cherry-markdown table {
   border-collapse: collapse;
+  width: 100%;
 }
-.cherry-markdown th,
-.cherry-markdown td {
+.cherry-markdown table th,
+.cherry-markdown table td {
   border: 1px solid var(--ch-table-border);
   padding: 8px 12px;
+  min-width: 100px;
 }
-.cherry-markdown th {
+.cherry-markdown table th {
   background: var(--ch-table-th-bg);
   font-weight: 600;
 }
