@@ -93,7 +93,7 @@ import { useRoute, useRouter } from 'vue-router'; import { ElMessage } from 'ele
 import { publishArticle, updateArticle, getArticleDetail, type ArticleDetailVO } from '../api/article'
 import { getCategoryList, type Category } from '../api/category'
 import { getTagList, createTag, type Tag } from '../api/tag'
-import { uploadImage } from '../api/upload'; import { useUserStore } from '../stores/user'
+import { uploadImage, uploadCover } from '../api/upload'; import { useUserStore } from '../stores/user'
 import MarkdownEditor from '../components/MarkdownEditor.vue'
 
 const route = useRoute(); const router = useRouter(); const userStore = useUserStore()
@@ -194,7 +194,7 @@ async function addTag() { const n = tagInput.value.trim(); if (!n) return; if (s
 function triggerCoverUpload() { coverFileInput.value?.click() }
 async function onCoverFileChange(e: Event) { const input = e.target as HTMLInputElement; if (input.files?.[0]) await doCoverUpload(input.files[0]) }
 async function handleCoverDrop(e: DragEvent) { coverDragOver.value = false; const file = e.dataTransfer?.files?.[0]; if (file?.type.startsWith('image/')) await doCoverUpload(file) }
-async function doCoverUpload(file: File) { coverUploading.value = true; try { coverImg.value = (await uploadImage(file)).data.url; ElMessage.success('上传成功') } catch { ElMessage.error('上传失败') } finally { coverUploading.value = false } }
+async function doCoverUpload(file: File) { coverUploading.value = true; try { coverImg.value = (await uploadCover(file)).data.url; ElMessage.success('上传成功') } catch { ElMessage.error('上传失败') } finally { coverUploading.value = false } }
 function applyCoverUrl() { const url = coverUrlInput.value.trim(); if (!url) return; coverImg.value = url; coverUrlInput.value = ''; ElMessage.success('封面URL已设置') }
 function removeCover() { coverImg.value = ''; coverUrlInput.value = '' }
 

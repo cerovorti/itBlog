@@ -70,7 +70,7 @@ import { ElMessage } from 'element-plus'
 import { getUserProfile, getMyProfile, updateProfile, changePassword, type UserVO } from '../api/user'
 import { getMyArticles, getUserArticles, getDrafts, deleteArticle, type ArticleVO } from '../api/article'
 import { getFavoriteList, getUserFavoriteList } from '../api/favorite'
-import { uploadImage } from '../api/upload'
+import { uploadAvatar } from '../api/upload'
 import { useUserStore } from '../stores/user'
 import UserAvatar from '../components/common/UserAvatar.vue'
 import ArticleCard from '../components/ArticleCard.vue'
@@ -100,7 +100,7 @@ async function loadFavorites() { loading.value = true; try { favArticles.value =
 async function loadDrafts() { loading.value = true; try { drafts.value = ((await getDrafts()).data.records || []) } finally { loading.value = false } }
 async function switchTab(t: string) { activeTab.value = t; if (t === 'published') loadPublished(); else if (t === 'favorites') loadFavorites(); else if (t === 'drafts') loadDrafts() }
 function handlePageChange(p: number) { page.value = p; loadPublished() }
-async function handleAvatarUpload(o: any) { try { editAvatar.value = (await uploadImage(o.file)).data.url } catch { ElMessage.error('失败') } }
+async function handleAvatarUpload(o: any) { try { editAvatar.value = (await uploadAvatar(o.file)).data.url } catch { ElMessage.error('失败') } }
 async function saveProfile() { saving.value = true; try { await updateProfile({ avatar: editAvatar.value, bio: editBio.value, skills: editSkills.value }); if (profile.value) { profile.value.avatar = editAvatar.value; profile.value.bio = editBio.value; profile.value.skills = editSkills.value }; ElMessage.success('保存成功') } catch {} finally { saving.value = false } }
 async function handleChangePassword() {
   if (!oldPassword.value) { ElMessage.warning('请输入原密码'); return }
