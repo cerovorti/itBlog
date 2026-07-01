@@ -4,7 +4,6 @@ import com.itblog.common.Result;
 import com.itblog.entity.Media;
 import com.itblog.entity.User;
 import com.itblog.service.FileService;
-import com.itblog.service.FileService.MediaWithData;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
