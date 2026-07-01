@@ -244,7 +244,8 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     private void validateRequest(ArticlePublishRequest request, Integer status) {
-        if (status != null && status == 0) return;
+        // 草稿(status=0) 或 status 为 null 时跳过全量校验
+        if (status == null || status == 0) return;
         if (request.getTitle() == null || request.getTitle().isBlank())
             throw new BusinessException("标题不能为空");
         if (request.getContent() == null || request.getContent().isBlank())

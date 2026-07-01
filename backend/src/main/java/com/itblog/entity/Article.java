@@ -1,6 +1,8 @@
 package com.itblog.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
@@ -14,6 +16,8 @@ public class Article {
     private String content;
     private String coverImg;
     private Long authorId;
+    /** 分类ID（草稿时可为null，INSERT时始终显式传递该列值） */
+    @TableField(insertStrategy = FieldStrategy.IGNORED)
     private Long categoryId;
     private Integer viewCount;
     private Integer likeCount;
