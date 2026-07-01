@@ -13,6 +13,7 @@
 | 安全认证 | Spring Security + JWT (jjwt) | 0.12.3 |
 | 数据库 | MySQL | 8.0+ |
 | XSS 过滤 | Jsoup | 1.17.2 |
+| 图床 | Lsky Pro | V2 |
 | 前端框架 | Vue 3 (Composition API) + TypeScript | 3.4 |
 | 构建工具 | Vite | 5.4 |
 | UI 组件库 | Element Plus | 2.5 |
@@ -28,7 +29,8 @@
 ### 创作者与读者端
 
 - **门户首页**：按"最新发布""最多点赞""最多阅读"展示文章列表，侧边栏提供热门标签云、推荐作者、热门文章排行
-- **Markdown 创作中心**：实时预览编辑器，支持代码块语法高亮、表格/图片快捷插入，粘贴或拖拽图片自动上传并回填 URL
+- **Markdown 创作中心**：实时预览编辑器，支持代码块语法高亮、表格/图片快捷插入，粘贴或拖拽图片自动上传至 **Lsky Pro 图床** 并回填直链 URL
+- **图片上传管理**：文章图片、用户头像、文章封面图分类上传至图床，统一管理媒体资源
 - **文章阅读与互动**：Markdown 正文渲染为 HTML 并自动生成**文章目录大纲 (TOC)**，支持点赞、收藏
 - **评论系统**：发表评论、回复他人，形成层级嵌套评论树
 - **个人主页**：展示个人基本信息，分类查看"我发布的文章"与"我收藏的文章"
@@ -44,6 +46,11 @@
 - **认证**：Spring Security + JWT 无状态令牌认证
 - **XSS 防御**：Jsoup 对 Markdown 内容进行危险标签过滤，防止存储型 XSS 攻击
 
+### 图床集成
+
+- **Lsky Pro API**：图片上传至自建图床，自动获取 Token 并处理续期，401 自动刷新重试，429 限流等待重试
+- **BLOB 数据迁移**：应用启动时自动将历史 BLOB 数据迁移到图床，批量替换文章内容中的旧 URL，幂等操作防止重复上传
+
 ## 项目结构
 
 ```
@@ -54,15 +61,16 @@
 │       ├── java/com/itblog/
 │       │   ├── ItBlogApplication.java    # 启动入口
 │       │   ├── common/                   # 公共类 (统一响应、异常处理、分页)
-│       │   ├── config/                   # 配置类 (MyBatis-Plus、WebMvc、XSS 过滤)
+│       │   ├── config/                   # 配置类 (MyBatis-Plus、WebMvc、XSS 过滤、Lsky 图床)
 │       │   ├── controller/               # 控制器层
 │       │   ├── dto/                      # 数据传输对象
-│       │   ├── entity/                   # 数据库实体
+│       │   ├── entity/                   # 数据库实体 (Article, Media 等)
 │       │   ├── filter/                   # XSS 过滤器
-│       │   ├── mapper/                   # MyBatis 数据访问层
+│       │   ├── mapper/                   # MyBatis 数据访问层 (含 MediaMapper)
 │       │   ├── security/                 # Spring Security + JWT 安全配置
-│       │   ├── service/                  # 服务接口
+│       │   ├── service/                  # 服务接口 (含 FileService, DataMigrationService)
 │       │   ├── service/impl/             # 服务实现
+│       │   ├── utils/                    # 工具类 (LskyUtil 图床工具)
 │       │   └── vo/                       # 视图对象
 │       └── resources/
 │           ├── application.yml           # 应用配置
@@ -87,7 +95,7 @@
 │       │   ├── like.ts                   # 点赞接口
 │       │   ├── search.ts                 # 搜索接口
 │       │   ├── tag.ts                    # 标签接口
-│       │   ├── upload.ts                 # 上传接口
+│       │   ├── upload.ts                 # 上传接口 (图片/头像/封面)
 │       │   └── user.ts                   # 用户接口
 │       ├── stores/                       # Pinia 状态管理
 │       ├── router/                       # 路由配置
@@ -118,17 +126,36 @@
 | `busi_favorite` | 收藏记录表 | `id`, `user_id`, `article_id` |
 | `busi_category` | 文章分类表 | `id`, `name`, `parent_id` (支持二级分类) |
 | `sys_user` | 用户表 | `id`, `username`, `password`, `avatar`, `bio` |
+| `sys_media` | 媒体资源表（图床元数据） | `id`, `original_name`, `lsky_key`, `content_type`, `file_size`, `file_url`, `thumbnail_url`, `markdown`, `file_category` (article_image / avatar / cover), `uploader_id` |
 
 > 初始化脚本位于 `backend/src/main/resources/db/` 目录。
+> `sys_media` 表取代了旧的 `sys_file`（BLOB 存储），所有图片通过 Lsky Pro 图床管理。
 
 ## 核心业务流程
 
 ### 文章发布与 XSS 防御
 
 ```
-用户撰写 Markdown → 粘贴/拖拽图片自动上传 → 提交原始 Markdown 至后端
-→ Jsoup XSS 过滤器剔除危险标签 → 安全内容存入数据库
-→ 读者访问时前端将 Markdown 解析为 HTML，高亮代码并生成目录大纲
+用户撰写 Markdown → 粘贴/拖拽图片自动上传至 Lsky Pro 图床 → 回填直链 URL
+→ 提交原始 Markdown 至后端 → Jsoup XSS 过滤器剔除危险标签
+→ 安全内容存入数据库 → 读者访问时前端将 Markdown 解析为 HTML，高亮代码并生成目录大纲
+```
+
+### 图片上传与图床集成
+
+```
+粘贴/拖拽上传 → UploadController 接收 MultipartFile → FileService → LskyUtil.upload()
+→ Lsky Pro API (Token 认证) → 返回直链/缩略图/Markdown 链接
+→ 写入 sys_media 表记录 → 返回 Lsky 直链 URL 给前端 → 回填编辑器
+```
+
+### 历史数据迁移
+
+```
+应用启动 → DataMigrationService (CommandLineRunner)
+→ 扫描 sys_file BLOB 记录 → 逐条上传至 Lsky Pro → 写入 sys_media
+→ 建立 BLOB ID → Media ID 映射 → 扫描所有文章 content/draft_content
+→ 将 /api/file/image/{id} 替换为 Lsky 直链 URL（幂等、带 500ms 限速）
 ```
 
 ### 评论树构建
@@ -139,7 +166,11 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/api/upload/image` | 图片上传，供 Markdown 编辑器使用 |
+| `POST` | `/api/upload/image` | 上传文章内容图片（Markdown 编辑器），返回 Lsky 直链 |
+| `POST` | `/api/upload/avatar` | 上传用户头像，返回 Lsky 直链 |
+| `POST` | `/api/upload/cover` | 上传文章封面图，返回 Lsky 直链 |
+| `GET` | `/api/file/redirect/{id}` | 302 重定向至 Lsky 直链 |
+| `GET` | `/api/file/image/{id}` | 通过 mediaId 返回文件流（兼容旧接口，从图床重新拉取） |
 | `POST` | `/api/article/publish` | 发布文章 |
 | `GET` | `/api/article/{id}` | 文章详情（阅读量 +1） |
 | `PUT` | `/api/article/{id}` | 编辑文章 |
@@ -157,6 +188,7 @@
 - **JDK** 17+
 - **Node.js** 18+
 - **MySQL** 8.0+
+- **Lsky Pro** V2（图床服务，需独立部署）
 - **Maven** 3.8+（可选，项目内置 Maven Wrapper）
 
 ## 快速开始
@@ -187,7 +219,9 @@ SOURCE backend/src/main/resources/db/demo_album_init.sql;
 
 ### 3. 修改配置
 
-编辑 `backend/src/main/resources/application.yml`，修改数据库连接信息：
+编辑 `backend/src/main/resources/application.yml`，修改数据库与图床配置：
+
+#### 3.1 数据库配置
 
 ```yaml
 spring:
@@ -195,6 +229,16 @@ spring:
     url: jdbc:mysql://localhost:3306/demo_album?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: your_password
+```
+
+#### 3.2 Lsky Pro 图床配置
+
+```yaml
+lsky:
+  base-url: https://your-lsky-instance.com     # Lsky Pro 服务地址
+  email: your@email.com                         # 登录邮箱
+  password: your_password                       # 登录密码
+  album-name: demo_album                           # 图片存储相册名称（可选）
 ```
 
 ### 4. 启动后端
