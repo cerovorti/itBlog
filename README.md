@@ -334,5 +334,5 @@ npm run build
 
 生成的静态文件位于 `frontend/dist/` 目录，可直接部署到 Nginx 等 Web 服务器。
 
-### 未修改的bug
+### 现存bug（laibujile）
 1、触发二级评论时，新评论同时显示在一级评论和二级评论区。
