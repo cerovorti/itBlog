@@ -26,7 +26,7 @@ const userStore = useUserStore()
 onMounted(() => {
   initTheme()
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (!localStorage.getItem('demo_album_theme')) {
+    if (!localStorage.getItem('it_blog_theme')) {
       initTheme()
     }
   })

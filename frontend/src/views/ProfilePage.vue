@@ -78,7 +78,7 @@ import ArticleCard from '../components/ArticleCard.vue'
 const route = useRoute(); const userStore = useUserStore()
 const userId = computed(() => route.params.userId ? Number(route.params.userId) : null)
 const isSelf = computed(() => !userId.value || userStore.user?.id === userId.value)
-const DARK_KEY = 'demo_album_dark_manual'
+const DARK_KEY = 'it_blog_dark_manual'
 const profile = ref<UserVO | null>(null); const activeTab = ref('published')
 const loading = ref(true); const articles = ref<ArticleVO[]>([]); const total = ref(0); const page = ref(1)
 const favArticles = ref<ArticleVO[]>([]); const drafts = ref<ArticleVO[]>([])

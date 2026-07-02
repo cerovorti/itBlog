@@ -1,5 +1,5 @@
 -- ============================================================
--- 初始化脚本: demo_album
+-- 初始化脚本: it_blog
 -- 生成时间: 2026-07-01 14:34:50
 -- 说明: 本文件由 db_export_init.py 自动生成，用于项目初始化
 --       数据已做脱敏处理，仅保留示例数据
@@ -9,11 +9,11 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- 建库（如已存在则忽略）
-CREATE DATABASE IF NOT EXISTS `demo_album`
+CREATE DATABASE IF NOT EXISTS `it_blog`
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
-USE `demo_album`;
+USE `it_blog`;
 
 -- ------------------------------------------------------------
 -- 表结构

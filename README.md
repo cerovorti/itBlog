@@ -26,7 +26,7 @@
 
 ## 初始化数据
 
-数据库初始化脚本 (`backend/src/main/resources/db/demo_album_init.sql`) 已做脱敏处理，导入后可直接使用以下账号登录：
+数据库初始化脚本 (`backend/src/main/resources/db/it_blog_init.sql`) 已做脱敏处理，导入后可直接使用以下账号登录：
 
 | 账号 | 密码 | 角色 | 说明 |
 |------|------|------|------|
@@ -236,9 +236,9 @@ cd it-blog
 
 ```bash
 # 登录 MySQL 后执行
-CREATE DATABASE IF NOT EXISTS demo_album DEFAULT CHARSET utf8mb4;
-USE demo_album;
-SOURCE backend/src/main/resources/db/demo_album_init.sql;
+CREATE DATABASE IF NOT EXISTS it_blog DEFAULT CHARSET utf8mb4;
+USE it_blog;
+SOURCE backend/src/main/resources/db/it_blog_init.sql;
 ```
 
 
@@ -251,7 +251,7 @@ SOURCE backend/src/main/resources/db/demo_album_init.sql;
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/demo_album?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/it_blog?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
     password: your_password
 ```
@@ -335,4 +335,4 @@ npm run build
 生成的静态文件位于 `frontend/dist/` 目录，可直接部署到 Nginx 等 Web 服务器。
 
 ### 未修改的bug
-1、做二级评论时同时显示在一级评论和二级评论区
+1、触发二级评论时，新评论同时显示在一级评论和二级评论区。

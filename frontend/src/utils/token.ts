@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'demo_album_token'
+const TOKEN_KEY = 'it_blog_token'
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-const THEME_KEY = 'demo_album_theme'
+const THEME_KEY = 'it_blog_theme'
 
 function getSystemDark(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches
