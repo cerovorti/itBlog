@@ -28,8 +28,7 @@ app:
     remember-me-expiration: 604800000  # 7天 (毫秒)
 
 lsky:
-  base-url: ${LSKY_BASE_URL:https://your-lsky-instance.com/api/v1}
+  base-url: ${LSKY_BASE_URL:https://your-lsky-instance.com}
   email: ${LSKY_EMAIL:your@email.com}
-  password: ${LSKY_PASSWORD:请输入密码}
-  album-name: ${LSKY_ALBUM:小组}
+  password: ${LSKY_PASSWORD:your_password}
 

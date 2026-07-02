@@ -238,7 +238,6 @@ lsky:
   base-url: https://your-lsky-instance.com     # Lsky Pro 服务地址
   email: your@email.com                         # 登录邮箱
   password: your_password                       # 登录密码
-  album-name: demo_album                           # 图片存储相册名称（可选）
 ```
 
 ### 4. 启动后端
