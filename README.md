@@ -24,6 +24,32 @@
 | 代码高亮 | highlight.js | 11.9 |
 | Markdown 解析 | markdown-it | 14.0 |
 
+## 初始化数据
+
+数据库初始化脚本 (`backend/src/main/resources/db/demo_album_init.sql`) 已做脱敏处理，导入后可直接使用以下账号登录：
+
+| 账号 | 密码 | 角色 | 说明 |
+|------|------|------|------|
+| `admin` | `admin123` | 管理员 | 可直接登录 |
+| `test_user_1` | 占位 hash（不可登录） | 普通用户 | 示例用户 |
+| `test_user_2` | 占位 hash（不可登录） | 普通用户 | 示例用户 |
+| `test_user_3` | 占位 hash（不可登录） | 普通用户 | 示例用户 |
+
+> 如需更多账户，可通过注册接口创建。
+
+### 预置示例数据
+
+| 数据 | 数量 | 说明 |
+|------|------|------|
+| 文章 | 3 | Spring Boot 3 快速入门、Vue 3 Composition API 实战、Docker 容器化部署 |
+| 分类 | 6 | 前端开发、后端开发、云计算与运维、人工智能与大数据、信息安全、软件架构 |
+| 标签 | 20 | React / Vue.js / Java / Spring Boot / Docker / MySQL 等常用技术标签 |
+| 评论 | 4 | 示例正面评论 |
+
+> **图床说明**：`sys_media` 表为空，图片上传功能依赖 **Lsky Pro 图床**，需在 `application.yml` 中配置 `lsky.base-url`、`lsky.email`、`lsky.password` 后方可正常使用。`busi_favorite`、`busi_like` 等互动数据表均为空。
+
+---
+
 ## 功能特性
 
 ### 创作者与读者端
@@ -215,7 +241,6 @@ USE demo_album;
 SOURCE backend/src/main/resources/db/demo_album_init.sql;
 ```
 
-或直接导入：`backend/src/main/resources/db/demo_album_20260629_105013.sql`
 
 ### 3. 修改配置
 
@@ -308,3 +333,6 @@ npm run build
 ```
 
 生成的静态文件位于 `frontend/dist/` 目录，可直接部署到 Nginx 等 Web 服务器。
+
+### 未修改的bug
+1、做二级评论时同时显示在一级评论和二级评论区
